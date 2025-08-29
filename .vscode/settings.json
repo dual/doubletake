@@ -1,0 +1,17 @@
+{
+    "python.analysis.autoImportCompletions": true,
+    "[python]": {
+        "editor.rulers": [
+            140
+        ],
+        "editor.formatOnType": true,
+        "editor.defaultFormatter": "ms-python.autopep8"
+    },
+    "[yaml]": {
+        "editor.formatOnSave": false
+    },
+    "sonarlint.connectedMode.project": {
+        "connectionId": "dual-github-personal-mac",
+        "projectKey": "dual_chilo"
+    }
+}

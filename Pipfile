@@ -1,0 +1,33 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[requires]
+python_version = "3.9"
+
+[pipenv]
+allow_prereleases = true
+
+[packages]
+faker = "*"
+msgspec = "*"
+
+[dev-packages]
+autopep8 = "*"
+mypy = "*"
+lxml = "*"
+pylint = "*"
+pylint-report = "*"
+pylint-json2html = "*"
+pytest = "*"
+pytest-html = "*"
+pytest-cov = "*"
+
+[scripts]
+qt = "python -m unittest tests/unit/cli/server/test_grpc.py"
+lint = "pylint --fail-under 10 doubleblind"
+test = "python -m unittest discover"
+coverage = "coverage run --source doubleblind -m pytest tests/unit --cov=doubleblind --junitxml ./coverage/reports/junit.xml --cov-report xml:./coverage/reports/cov.xml --html=./coverage/reports/index.html --self-contained-html --cov-report html:./coverage/pretty -p no:warnings -o log_cli=true"
+mypy-report = "mypy --html-report ./coverage/typing doubleblind"
+mypy = "mypy doubleblind"

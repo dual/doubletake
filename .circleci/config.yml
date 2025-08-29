@@ -1,0 +1,113 @@
+version: 2.1
+orbs:
+    python: circleci/python@3.2.0
+    sonarcloud: sonarsource/sonarcloud@3.0.0
+commands:
+    setup-artifacts:
+        steps:
+            - run: mkdir ./coverage && mkdir ./coverage/grpc && mkdir ./coverage/lint && mkdir ./coverage/reports && mkdir ./coverage/pretty && mkdir ./coverage/typing || exit 0
+    python-unit-test-report:
+        steps:
+            - run: pipenv run coverage
+            - store_artifacts:
+                path: ./coverage
+            - store_test_results:
+                path: ./coverage/reports/junit.xml
+    pypi-setup:
+        steps:
+            - run: echo -e "[pypi]" >> ~/.pypirc
+            - run: echo -e "username = __token__" >> ~/.pypirc
+            - run: echo -e "password = $PYPI_TOKEN" >> ~/.pypirc
+    pypi-publish:
+        steps:
+            - run: python3 -m pip install --user --upgrade setuptools wheel
+            - run: python3 setup.py sdist bdist_wheel
+            - run: python3 -m pip install --user --upgrade twine
+            - run: python3 -m twine upload dist/*
+    mypy-test:
+        steps:
+            - run: pipenv run mypy
+            - run: pipenv run mypy-report
+            - store_artifacts:
+                path: ./coverage/typing
+    lint-code:
+        steps:
+            - run: pipenv run lint
+            - run: pipenv run pylint chilo_api --output-format=json > ./coverage/lint/pylint_report.json || exit 0
+            - run: pipenv run pylint-json2html ./coverage/lint/pylint_report.json -o ./coverage/lint/pylint_report.html || exit 0
+            - store_artifacts:
+                path: ./coverage/lint
+jobs:
+    lint:
+        docker:
+            - image: cimg/python:3.9.17
+        steps:
+            - attach_workspace:
+                at: ~/project
+            - setup-artifacts
+            - lint-code
+    type-check:
+        docker:
+            - image: cimg/python:3.9.17
+        steps:
+            - attach_workspace:
+                at: ~/project
+            - setup-artifacts
+            - mypy-test
+    unit-test:
+        docker:
+            - image: cimg/python:3.9.17
+        steps:
+            - attach_workspace:
+                at: ~/project
+            - setup-artifacts
+            - python-unit-test-report
+            - sonarcloud/scan
+    install-build:
+        docker:
+            - image: cimg/python:3.9.17
+        steps:
+            - checkout
+            - python/install-packages:
+                pkg-manager: pipenv
+                args: '--dev'
+            - persist_to_workspace:
+                root: ~/project
+                paths:
+                    - ./*
+    install-build-publish:
+        docker:
+            - image: cimg/python:3.9.17
+        steps:
+            - checkout
+            - python/install-packages:
+                pkg-manager: pipenv
+            - pypi-setup
+            - pypi-publish
+workflows:
+    install-build-publish-workflow:
+        jobs:
+            - install-build-publish:
+                context:
+                    - pipenv
+                filters:
+                    tags:
+                        only: /.*/
+                    branches:
+                        ignore: /.*/
+    install-build-test-workflow:
+        jobs:
+            - install-build:
+                context:
+                    - pipenv
+            - lint:
+                requires:
+                    - install-build
+            - type-check:
+                  requires:
+                    - install-build
+            - unit-test:
+                context:
+                    - sonarcloud
+                requires:
+                    - install-build

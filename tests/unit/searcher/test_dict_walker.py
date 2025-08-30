@@ -6,7 +6,7 @@ import copy
 import unittest
 from unittest.mock import Mock, patch
 
-from doubleblind.searcher.dict_walker import DictWalker
+from doubletake.searcher.dict_walker import DictWalker
 from tests.mocks.test_data import (
     SAMPLE_USERS,
     COMPLEX_DATA_STRUCTURES,
@@ -313,7 +313,7 @@ class TestDictWalker(unittest.TestCase):
         self.assertIs(result, test_data)
         self.assertNotEqual(test_data['email'], original_email)
 
-    @patch('doubleblind.searcher.dict_walker.DataFaker')
+    @patch('doubletake.searcher.dict_walker.DataFaker')
     def test_walk_and_replace_uses_data_faker(self, mock_data_faker_class) -> None:
         """Test that DictWalker uses DataFaker for replacement values."""
         mock_data_faker = Mock()
@@ -475,7 +475,7 @@ class TestDictWalker(unittest.TestCase):
         # Non-PII should remain unchanged
         self.assertEqual(result["contact_list"][2], "normal text")  # type: ignore
 
-    @patch('doubleblind.searcher.dict_walker.DataFaker')
+    @patch('doubletake.searcher.dict_walker.DataFaker')
     def test_walk_and_replace_list_with_faker(self, mock_data_faker_class) -> None:
         """Test PII replacement in lists using DataFaker."""
         # Test line 163: DataFaker handling for list items

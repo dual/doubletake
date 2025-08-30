@@ -2,7 +2,7 @@ import re
 
 from typing_extensions import Unpack
 
-from doubleblind.types.settings import Settings
+from doubletake.types.settings import Settings
 
 
 class PatternManager:

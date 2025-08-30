@@ -3,8 +3,8 @@ from typing_extensions import Unpack
 
 import msgspec
 
-from doubleblind.utils.pattern_manager import PatternManager
-from doubleblind.types.settings import Settings
+from doubletake.utils.pattern_manager import PatternManager
+from doubletake.types.settings import Settings
 
 
 class JSONGrepper:

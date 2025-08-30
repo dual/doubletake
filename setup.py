@@ -5,12 +5,12 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setup(
-    name='doubleblind',
+    name='doubletake',
     version=os.getenv('CIRCLE_TAG', '0.1.0'),
-    url='https://github.com/dual/doubleblind.git',
+    url='https://github.com/dual/doubletake.git',
     author='Paul Cruse III',
     author_email='paulcruse3@gmail.com',
-    description='DoubleBlind is a module to scrub PII from datasets',
+    description='doubletake is a module to scrub PII from datasets',
     long_description=long_description,
     long_description_content_type='text/markdown',
     packages=find_packages(),

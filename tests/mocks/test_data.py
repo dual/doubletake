@@ -1,5 +1,5 @@
 """
-Test data containing various types of fake PII for testing the doubleblind library.
+Test data containing various types of fake PII for testing the doubletake library.
 This data is completely fictional and should only be used for testing purposes.
 """
 from typing import Any, Dict, List

@@ -6,7 +6,7 @@ import copy
 import unittest
 from unittest.mock import Mock, patch
 
-from doubleblind.searcher.json_grepper import JSONGrepper
+from doubletake.searcher.json_grepper import JSONGrepper
 from tests.mocks.test_data import (
     SAMPLE_USERS,
     COMPLEX_DATA_STRUCTURES,
@@ -295,7 +295,7 @@ class TestJSONGrepper(unittest.TestCase):
         self.assertNotEqual(result['database']['admin_email'], original_admin_email)
         self.assertNotEqual(result['notifications']['admin_contacts'][0], original_contact_email)
 
-    @patch('doubleblind.searcher.json_grepper.PatternManager')
+    @patch('doubletake.searcher.json_grepper.PatternManager')
     def test_grep_and_replace_uses_pattern_manager(self, mock_pattern_manager_class) -> None:
         """Test that JSONGrepper uses PatternManager for pattern operations."""
         mock_pattern_manager = Mock()

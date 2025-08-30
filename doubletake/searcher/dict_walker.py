@@ -2,9 +2,9 @@ import re
 from typing import Any, Callable, Optional, Union
 from typing_extensions import Unpack
 
-from doubleblind.utils.data_faker import DataFaker
-from doubleblind.utils.pattern_manager import PatternManager
-from doubleblind.types.settings import Settings
+from doubletake.utils.data_faker import DataFaker
+from doubletake.utils.pattern_manager import PatternManager
+from doubletake.types.settings import Settings
 
 
 class DictWalker:

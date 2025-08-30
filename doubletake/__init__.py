@@ -1,17 +1,17 @@
 from typing import Any, Callable, Optional
 from typing_extensions import Unpack
 
-from doubleblind.searcher.json_grepper import JSONGrepper
-from doubleblind.searcher.dict_walker import DictWalker
-from doubleblind.utils.config_validator import ConfigValidator
-from doubleblind.types.settings import Settings
+from doubletake.searcher.json_grepper import JSONGrepper
+from doubletake.searcher.dict_walker import DictWalker
+from doubletake.utils.config_validator import ConfigValidator
+from doubletake.types.settings import Settings
 
 
-class DoubleBlind:
+class DoubleTake:
     """
     Main class for PII (Personally Identifiable Information) detection and replacement.
 
-    DoubleBlind provides functionality to automatically detect and replace PII data
+    doubletake provides functionality to automatically detect and replace PII data
     in various data structures including dictionaries, lists, and JSON-serializable objects.
     It supports both fake data generation and custom callback functions for replacement.
 
@@ -27,22 +27,22 @@ class DoubleBlind:
 
     Example:
         Basic usage with default settings:
-        >>> db = DoubleBlind()
+        >>> db = DoubleTake()
         >>> data = [{"email": "john@example.com", "name": "John Doe"}]
         >>> masked = db.mask_data(data)
 
         Using fake data generation:
-        >>> db = DoubleBlind(use_faker=True)
+        >>> db = DoubleTake(use_faker=True)
         >>> masked = db.mask_data(data)
 
         Using custom callback:
         >>> def custom_replacer(item, key, pattern, breadcrumbs):
         ...     return "***REDACTED***"
-        >>> db = DoubleBlind(callback=custom_replacer)
+        >>> db = DoubleTake(callback=custom_replacer)
         >>> masked = db.mask_data(data)
 
         With custom patterns:
-        >>> db = DoubleBlind(
+        >>> db = DoubleTake(
         ...     allowed=['name'],  # Don't replace names
         ...     extras=[r'CUST-\\d+']  # Custom pattern for customer IDs
         ... )
@@ -50,7 +50,7 @@ class DoubleBlind:
 
     def __init__(self, **kwargs: Unpack[Settings]) -> None:
         """
-        Initialize DoubleBlind with configuration settings.
+        Initialize doubletake with configuration settings.
 
         Args:
             **kwargs: Configuration settings that match the Settings TypedDict.
@@ -88,7 +88,7 @@ class DoubleBlind:
                 types of non-PII data are preserved.
 
         Example:
-            >>> db = DoubleBlind()
+            >>> db = DoubleTake()
             >>> data = [
             ...     {"email": "john@example.com", "name": "John"},
             ...     {"phone": "555-123-4567", "id": 123}

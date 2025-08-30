@@ -1,18 +1,18 @@
-# DoubleBlind
+# doubletake
 
 > **Intelligent PII Detection and Replacement for Python**
 
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/doubleblind/)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/doubletake/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![CircleCI](https://circleci.com/gh/dual/doubleblind.svg?style=shield)](https://circleci.com/gh/dual/doubleblind)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dual_doubleblind&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dual_doubleblind)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=dual_doubleblind&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dual_doubleblind)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=dual_doubleblind&metric=bugs)](https://sonarcloud.io/summary/new_code?id=dual_doubleblind)
-[![pypi package](https://img.shields.io/pypi/v/doubleblind-api?color=%2334D058&label=pypi%20package)](https://pypi.org/project/doubleblind/)
-[![python](https://img.shields.io/pypi/pyversions/doubleblind-api.svg?color=%2334D058)](https://pypi.org/project/doubleblind)
-[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dual/doubleblind/issues)
+[![CircleCI](https://circleci.com/gh/dual/doubletake.svg?style=shield)](https://circleci.com/gh/dual/doubletake)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=bugs)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
+[![pypi package](https://img.shields.io/pypi/v/doubletake-api?color=%2334D058&label=pypi%20package)](https://pypi.org/project/doubletake/)
+[![python](https://img.shields.io/pypi/pyversions/doubletake-api.svg?color=%2334D058)](https://pypi.org/project/doubletake)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dual/doubletake/issues)
 
-DoubleBlind is a powerful, flexible library for automatically detecting and replacing Personally Identifiable Information (PII) in your data structures. Whether you're anonymizing datasets for testing, protecting sensitive information in logs, or ensuring GDPR compliance, DoubleBlind makes it effortless.
+doubletake is a powerful, flexible library for automatically detecting and replacing Personally Identifiable Information (PII) in your data structures. Whether you're anonymizing datasets for testing, protecting sensitive information in logs, or ensuring GDPR compliance, doubletake makes it effortless.
 
 ## ✨ Key Features
 
@@ -25,31 +25,31 @@ DoubleBlind is a powerful, flexible library for automatically detecting and repl
 - **🛡️ Type Safe**: Full TypeScript-style type hints for better development experience
 - **📋 Path Targeting**: Precisely target specific data paths for replacement
 
-## 🎯 Why DoubleBlind?
+## 🎯 Why doubletake?
 
 **The Problem**: You have sensitive data in complex structures that needs to be anonymized for testing, logging, or compliance, but existing solutions are either too rigid, too slow, or don't handle your specific use cases.
 
-**The Solution**: DoubleBlind provides intelligent PII detection with multiple processing strategies, letting you choose the perfect balance of performance and flexibility for your needs.
+**The Solution**: doubletake provides intelligent PII detection with multiple processing strategies, letting you choose the perfect balance of performance and flexibility for your needs.
 
 ## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-pip install doubleblind
+pip install doubletake
 # or
-pipenv install doubleblind
+pipenv install doubletake
 # or
-poetry add doubleblind
+poetry add doubletake
 ```
 
 ### Basic Usage
 
 ```python
-from doubleblind import DoubleBlind
+from doubletake import DoubleTake
 
 # Initialize with default settings
-db = DoubleBlind()
+db = DoubleTake()
 
 # Your data with PII
 data = [
@@ -93,10 +93,10 @@ print(masked_data)
 ### Using Realistic Fake Data
 
 ```python
-from doubleblind import DoubleBlind
+from doubletake import DoubleTake
 
 # Generate realistic fake data instead of asterisks
-db = DoubleBlind(use_faker=True)
+db = DoubleTake(use_faker=True)
 
 masked_data = db.mask_data(data)
 # Emails become: sarah.johnson@example.net
@@ -116,14 +116,14 @@ def custom_replacer(item, key, pattern_type, breadcrumbs):
     else:
         return "***CLASSIFIED***"
 
-db = DoubleBlind(callback=custom_replacer)
+db = DoubleTake(callback=custom_replacer)
 ```
 
 ### Targeting Specific Patterns
 
 ```python
 # Only replace certain types, allow others through
-db = DoubleBlind(
+db = DoubleTake(
     allowed=['email'],  # Don't replace emails
     extras=[r'CUST-\d+', r'REF-[A-Z]{3}-\d{4}']  # Custom patterns
 )
@@ -133,7 +133,7 @@ db = DoubleBlind(
 
 ```python
 # Only replace PII at specific data paths
-db = DoubleBlind(
+db = DoubleTake(
     known_paths=[
         'customer.email',
         'billing.ssn', 
@@ -144,7 +144,7 @@ db = DoubleBlind(
 
 ## 🏗️ Architecture
 
-DoubleBlind offers two complementary processing strategies:
+doubletake offers two complementary processing strategies:
 
 ### 🚀 JSONGrepper (High Performance)
 
@@ -155,7 +155,7 @@ DoubleBlind offers two complementary processing strategies:
 
 ```python
 # Automatically chosen when no custom logic needed
-db = DoubleBlind()  # Uses JSONGrepper internally
+db = DoubleTake()  # Uses JSONGrepper internally
 ```
 
 ### 🌳 DictWalker (Maximum Flexibility)
@@ -167,8 +167,8 @@ db = DoubleBlind()  # Uses JSONGrepper internally
 
 ```python
 # Automatically chosen when using advanced features
-db = DoubleBlind(use_faker=True)  # Uses DictWalker
-db = DoubleBlind(callback=my_func)  # Uses DictWalker
+db = DoubleTake(use_faker=True)  # Uses DictWalker
+db = DoubleTake(callback=my_func)  # Uses DictWalker
 ```
 
 ## 📊 Built-in PII Patterns
@@ -185,7 +185,7 @@ db = DoubleBlind(callback=my_func)  # Uses DictWalker
 ## 🎛️ Configuration Options
 
 ```python
-db = DoubleBlind(
+db = DoubleTake(
     use_faker=False,           # Use fake data vs asterisks
     callback=None,             # Custom replacement function
     allowed=[],                # Pattern types to skip
@@ -213,7 +213,7 @@ api_response = {
     "metadata": {"request_ip": "203.0.113.42"}
 }
 
-db = DoubleBlind()
+db = DoubleTake()
 safe_response = db.mask_data([api_response])[0]
 # Safe to log without exposing PII
 ```
@@ -227,7 +227,7 @@ db_records = [
     {"patient_id": "PT002", "ssn": "987-65-4321", "email": "another@email.com"}
 ]
 
-db = DoubleBlind(
+db = DoubleTake(
     use_faker=True,
     allowed=[],  # Replace all PII types
 )
@@ -251,20 +251,20 @@ config = {
     }
 }
 
-db = DoubleBlind(known_paths=['database.admin_email', 'api_keys.support_email'])
+db = DoubleTake(known_paths=['database.admin_email', 'api_keys.support_email'])
 sanitized_config = db.mask_data([config])[0]
 ```
 
 ## 🔬 Performance & Testing
 
-DoubleBlind includes comprehensive tests with 100% coverage:
+doubletake includes comprehensive tests with 100% coverage:
 
 ```bash
 # Run tests
 pipenv run test
 
 # Run with coverage
-pipenv run pytest --cov=doubleblind tests/
+pipenv run pytest --cov=doubletake tests/
 ```
 
 **Performance Benchmarks** (10,000 records):
@@ -278,8 +278,8 @@ We welcome contributions! Please see our [contributing guidelines](CONTRIBUTING.
 
 ```bash
 # Development setup
-git clone https://github.com/paulcruse3/doubleblind.git
-cd doubleblind
+git clone https://github.com/paulcruse3/doubletake.git
+cd doubletake
 pipenv install --dev
 pipenv run test
 ```
@@ -290,8 +290,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🔗 Links
 
-- [Documentation](https://github.com/paulcruse3/doubleblind/wiki) (coming soon)
-- [Issues](https://github.com/paulcruse3/doubleblind/issues)
+- [Documentation](https://github.com/paulcruse3/doubletake/wiki) (coming soon)
+- [Issues](https://github.com/paulcruse3/doubletake/issues)
 - [Changelog](CHANGELOG.md)
 - [Security Policy](SECURITY.md)
 

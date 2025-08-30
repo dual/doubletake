@@ -26,8 +26,8 @@ pytest-cov = "*"
 
 [scripts]
 qt = "python -m unittest tests/unit/cli/server/test_grpc.py"
-lint = "pylint --fail-under 10 doubleblind"
+lint = "pylint --fail-under 10 doubletake"
 test = "python -m unittest discover"
-coverage = "coverage run --source doubleblind -m pytest tests/unit --cov=doubleblind --junitxml ./coverage/reports/junit.xml --cov-report xml:./coverage/reports/cov.xml --html=./coverage/reports/index.html --self-contained-html --cov-report html:./coverage/pretty -p no:warnings -o log_cli=true"
-mypy-report = "mypy --html-report ./coverage/typing doubleblind"
-mypy = "mypy doubleblind"
+coverage = "coverage run --source doubletake -m pytest tests/unit --cov=doubletake --junitxml ./coverage/reports/junit.xml --cov-report xml:./coverage/reports/cov.xml --html=./coverage/reports/index.html --self-contained-html --cov-report html:./coverage/pretty -p no:warnings -o log_cli=true"
+mypy-report = "mypy --html-report ./coverage/typing doubletake"
+mypy = "mypy doubletake"

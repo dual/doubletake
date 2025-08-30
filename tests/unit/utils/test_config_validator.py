@@ -1,11 +1,11 @@
 """
 Unit tests for the ConfigValidator class.
-Tests configuration validation for the doubleblind library.
+Tests configuration validation for the doubletake library.
 """
 import re
 import unittest
 
-from doubleblind.utils.config_validator import ConfigValidator
+from doubletake.utils.config_validator import ConfigValidator
 
 
 class TestConfigValidator(unittest.TestCase):

@@ -5,7 +5,7 @@ Tests pattern matching, replacement logic, and configuration handling.
 import unittest
 import re
 
-from doubleblind.utils.pattern_manager import PatternManager
+from doubletake.utils.pattern_manager import PatternManager
 
 
 class TestPatternManager(unittest.TestCase):

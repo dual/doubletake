@@ -5,7 +5,7 @@ Tests fake data generation using the Faker library for PII replacement.
 import unittest
 from unittest.mock import patch, MagicMock
 
-from doubleblind.utils.data_faker import DataFaker
+from doubletake.utils.data_faker import DataFaker
 
 
 class TestDataFaker(unittest.TestCase):
@@ -162,7 +162,7 @@ class TestDataFaker(unittest.TestCase):
                 self.assertIsInstance(result, str)
                 self.assertTrue(len(result) > 0)
 
-    @patch('doubleblind.utils.data_faker.Faker')
+    @patch('doubletake.utils.data_faker.Faker')
     def test_init_creates_faker_with_default_locale(self, mock_faker_class: MagicMock) -> None:
         """Test that DataFaker creates Faker instance with default settings."""
         mock_faker_instance = MagicMock()
@@ -172,7 +172,7 @@ class TestDataFaker(unittest.TestCase):
 
         mock_faker_class.assert_called_once_with()
 
-    @patch('doubleblind.utils.data_faker.Faker')
+    @patch('doubletake.utils.data_faker.Faker')
     def test_fake_map_uses_faker_methods(self, mock_faker_class: MagicMock) -> None:
         """Test that fake_map is properly populated with Faker methods."""
         mock_faker_instance = MagicMock()

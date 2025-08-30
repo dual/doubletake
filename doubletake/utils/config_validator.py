@@ -1,14 +1,14 @@
 import re
 from typing_extensions import Unpack
 
-from doubleblind.types.settings import Settings
+from doubletake.types.settings import Settings
 
 
 class ConfigValidator:
     """
-    Validates configuration settings for DoubleBlind PII processing.
+    Validates configuration settings for doubletake PII processing.
 
-    ConfigValidator ensures that all configuration parameters passed to DoubleBlind
+    ConfigValidator ensures that all configuration parameters passed to doubletake
     classes are valid and properly formatted. It performs comprehensive validation
     of user inputs to prevent runtime errors and ensure consistent behavior.
 

@@ -166,12 +166,32 @@ class DataWalker:
     def __replace_string_value(self, item) -> Union[str, None]:
         if not isinstance(item, str):
             return None
-        for pattern_key, pattern_value in PatternManager().patterns.items():
+        item = self.__replace_known_patterns_in_string(item)
+        item = self.__replace_extra_patterns_in_string(item)
+        return item
+
+    def __replace_known_patterns_in_string(self, item: str) -> str:
+        for pattern_key, pattern_value in self.__pattern_manager.patterns.items():
+            if pattern_key in self.__allowed:
+                continue
             match = re.search(pattern_value, item)
             if match:
                 return re.sub(
                     pattern_value,
                     self.__data_faker.get_fake_data(pattern_key),
+                    item,
+                    count=0,
+                    flags=re.IGNORECASE
+                )
+        return item
+
+    def __replace_extra_patterns_in_string(self, item: str) -> str:
+        for pattern in self.__pattern_manager.extras:
+            match = re.search(pattern, item)
+            if match:
+                return re.sub(
+                    pattern,
+                    self.__data_faker.get_fake_data(None),
                     item,
                     count=0,
                     flags=re.IGNORECASE

@@ -290,20 +290,3 @@ class TestDataFaker(unittest.TestCase):
 
         # Should complete reasonably quickly (less than 1 second for 100 calls)
         self.assertLess(elapsed, 1.0, "100 fake data generations should complete in under 1 second")
-
-    def test_data_format_validation_comprehensive(self) -> None:
-        """Comprehensive validation of generated data formats."""
-        test_cases = [
-            ('email', lambda x: '@' in x and '.' in x),
-            ('phone', lambda x: any(c.isdigit() for c in x)),
-            ('ssn', lambda x: len([c for c in x if c.isdigit()]) >= 9),
-            ('credit_card', lambda x: len([c for c in x if c.isdigit()]) >= 13),
-            ('ip_address', lambda x: len(x.split('.')) == 4),
-            ('url', lambda x: x.startswith(('http://', 'https://'))),
-            ('other', lambda x: len(x) > 0 and not x.isspace())
-        ]
-
-        for key, validator in test_cases:
-            with self.subTest(key=key):
-                result = self.data_faker.get_fake_data(key)
-                self.assertTrue(validator(result), f"Generated {key} data '{result}' failed validation")

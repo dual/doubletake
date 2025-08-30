@@ -7,11 +7,11 @@ from doubletake.utils.pattern_manager import PatternManager
 from doubletake.types.settings import Settings
 
 
-class DictWalker:
+class DataWalker:
     """
     Traverses and processes nested data structures for PII replacement.
 
-    DictWalker provides sophisticated traversal of complex nested data structures
+    DataWalker provides sophisticated traversal of complex nested data structures
     (dictionaries, lists, and mixed types) to detect and replace PII. It supports
     multiple replacement strategies including fake data generation, custom callbacks,
     and known path targeting.
@@ -44,7 +44,7 @@ class DictWalker:
 
     Example:
         Basic usage:
-        >>> walker = DictWalker()
+        >>> walker = DataWalker()
         >>> data = {"user": {"email": "john@example.com", "phone": "555-1234"}}
         >>> walker.walk_and_replace(data)
         >>> # data is modified in-place with PII replaced
@@ -52,14 +52,14 @@ class DictWalker:
         With custom callback:
         >>> def custom_replacer(item, key, pattern, breadcrumbs):
         ...     return f"***{pattern or 'REDACTED'}***"
-        >>> walker = DictWalker(callback=custom_replacer)
+        >>> walker = DataWalker(callback=custom_replacer)
 
         With known paths:
-        >>> walker = DictWalker(known_paths=['user.email', 'billing.ssn'])
+        >>> walker = DataWalker(known_paths=['user.email', 'billing.ssn'])
         >>> # Only replaces data at specified paths
 
         With allowed patterns:
-        >>> walker = DictWalker(allowed=['email'])
+        >>> walker = DataWalker(allowed=['email'])
         >>> # Skips email replacement, processes other PII types
     """
 
@@ -71,9 +71,9 @@ class DictWalker:
         self.__pattern_manager: PatternManager = PatternManager(**kwargs)
         self.__data_faker: DataFaker = DataFaker()
 
-    def walk_and_replace(self, item: Any) -> Optional[dict[str, Any]]:
+    def walk_and_replace(self, item: Any) -> Union[str, None, dict[str, Any]]:
         if not isinstance(item, dict):
-            return None
+            return self.__replace_string_value(item)
         self.__breadcrumbs = set()
         self.__walk_dict(item, None)
         return item
@@ -162,3 +162,18 @@ class DictWalker:
             item[key] = self.__data_faker.get_fake_data(pattern_key)
         elif isinstance(item, list) and isinstance(key, int):
             item[key] = self.__data_faker.get_fake_data(pattern_key)
+
+    def __replace_string_value(self, item) -> Union[str, None]:
+        if not isinstance(item, str):
+            return None
+        for pattern_key, pattern_value in PatternManager().patterns.items():
+            match = re.search(pattern_value, item)
+            if match:
+                return re.sub(
+                    pattern_value,
+                    self.__data_faker.get_fake_data(pattern_key),
+                    item,
+                    count=0,
+                    flags=re.IGNORECASE
+                )
+        return item

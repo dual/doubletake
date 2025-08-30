@@ -14,7 +14,7 @@ class JSONGrepper:
     JSONGrepper provides high-performance PII detection and replacement by converting
     data structures to JSON strings, applying regex patterns, then deserializing back
     to the original data structure. This approach is faster than tree traversal for
-    large datasets but less flexible than DictWalker.
+    large datasets but less flexible than DataWalker.
 
     The class leverages msgspec for efficient JSON serialization/deserialization
     and PatternManager for regex pattern matching. It processes all PII patterns

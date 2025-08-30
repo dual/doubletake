@@ -158,7 +158,7 @@ doubletake offers two complementary processing strategies:
 db = DoubleTake()  # Uses JSONGrepper internally
 ```
 
-### 🌳 DictWalker (Maximum Flexibility)
+### 🌳 DataWalker (Maximum Flexibility)
 
 - **Best for**: Complex logic, custom callbacks, path targeting
 - **Speed**: 🐢 Slower but more capable  
@@ -167,8 +167,8 @@ db = DoubleTake()  # Uses JSONGrepper internally
 
 ```python
 # Automatically chosen when using advanced features
-db = DoubleTake(use_faker=True)  # Uses DictWalker
-db = DoubleTake(callback=my_func)  # Uses DictWalker
+db = DoubleTake(use_faker=True)  # Uses DataWalker
+db = DoubleTake(callback=my_func)  # Uses DataWalker
 ```
 
 ## 📊 Built-in PII Patterns
@@ -270,7 +270,7 @@ pipenv run pytest --cov=doubletake tests/
 **Performance Benchmarks** (10,000 records):
 
 - JSONGrepper: ~0.1s (simple patterns)
-- DictWalker: ~0.3s (with fake data generation)
+- DataWalker: ~0.3s (with fake data generation)
 
 ## 🤝 Contributing
 

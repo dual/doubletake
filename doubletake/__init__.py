@@ -2,7 +2,7 @@ from typing import Any, Callable, Optional
 from typing_extensions import Unpack
 
 from doubletake.searcher.json_grepper import JSONGrepper
-from doubletake.searcher.dict_walker import DictWalker
+from doubletake.searcher.data_walker import DataWalker
 from doubletake.utils.config_validator import ConfigValidator
 from doubletake.types.settings import Settings
 
@@ -17,13 +17,13 @@ class DoubleTake:
 
     The class uses two main strategies for PII processing:
     1. JSON serialization-based replacement (JSONGrepper) - faster, uses regex patterns
-    2. Dictionary walking (DictWalker) - more flexible, supports custom callbacks and fake data
+    2. Dictionary walking (DataWalker) - more flexible, supports custom callbacks and fake data
 
     Attributes:
         __use_faker (bool): Whether to use fake data generation for replacements
         __callback (Optional[Callable]): Custom callback function for PII replacement
         __json_grepper (JSONGrepper): Handler for JSON-based PII replacement
-        __dict_walker (DictWalker): Handler for dictionary traversal and replacement
+        __dict_walker (DataWalker): Handler for dictionary traversal and replacement
 
     Example:
         Basic usage with default settings:
@@ -69,7 +69,7 @@ class DoubleTake:
         self.__use_faker: bool = kwargs.get('use_faker', False)  # type: ignore
         self.__callback: Optional[Callable] = kwargs.get('callback', None)  # type: ignore
         self.__json_grepper: JSONGrepper = JSONGrepper(**kwargs)
-        self.__dict_walker: DictWalker = DictWalker(**kwargs)
+        self.__dict_walker: DataWalker = DataWalker(**kwargs)
 
     def mask_data(self, data: list[Any]) -> list[Any]:
         """

@@ -1,12 +1,12 @@
 """
-Unit tests for the DictWalker class.
+Unit tests for the DataWalker class.
 Tests dictionary traversal and PII pattern replacement functionality.
 """
 import copy
 import unittest
 from unittest.mock import Mock, patch
 
-from doubletake.searcher.dict_walker import DictWalker
+from doubletake.searcher.data_walker import DataWalker
 from tests.mocks.test_data import (
     SAMPLE_USERS,
     COMPLEX_DATA_STRUCTURES,
@@ -17,46 +17,30 @@ from tests.mocks.test_data import (
 )
 
 
-class TestDictWalker(unittest.TestCase):
-    """Test cases for the DictWalker class."""
+class TestDataWalker(unittest.TestCase):
+    """Test cases for the DataWalker class."""
 
     def setUp(self) -> None:
         """Set up test fixtures before each test method."""
-        self.dict_walker = DictWalker()
+        self.dict_walker = DataWalker()
 
     def test_init_with_default_settings(self) -> None:
-        """Test DictWalker initialization with default settings."""
-        walker = DictWalker()
-        self.assertIsInstance(walker, DictWalker)
+        """Test DataWalker initialization with default settings."""
+        walker = DataWalker()
+        self.assertIsInstance(walker, DataWalker)
 
     def test_init_with_custom_settings(self) -> None:
-        """Test DictWalker initialization with custom settings."""
+        """Test DataWalker initialization with custom settings."""
         def callback(item, key, pattern, breadcrumbs):
             return "REDACTED"
 
-        walker = DictWalker(  # type: ignore
+        walker = DataWalker(  # type: ignore
             allowed=['email'],
             known_paths=['user.profile.email'],
             callback=callback,
             extras=[r'\d{3}-\d{2}-\d{4}']
         )
-        self.assertIsInstance(walker, DictWalker)
-
-    def test_walk_and_replace_returns_none_for_non_dict(self) -> None:
-        """Test that walk_and_replace returns None for non-dictionary input."""
-        test_cases = [
-            "string",
-            123,
-            [],
-            None,
-            True,
-            set()
-        ]
-
-        for test_input in test_cases:
-            with self.subTest(input=test_input):
-                result = self.dict_walker.walk_and_replace(test_input)
-                self.assertIsNone(result)
+        self.assertIsInstance(walker, DataWalker)
 
     def test_walk_and_replace_basic_user_data(self) -> None:
         """Test basic PII replacement in user data."""
@@ -138,7 +122,7 @@ class TestDictWalker(unittest.TestCase):
         original_phone = test_data['phone']
 
         # Create walker with email in allowed list
-        walker = DictWalker(allowed=['email'])  # type: ignore
+        walker = DataWalker(allowed=['email'])  # type: ignore
         result = walker.walk_and_replace(test_data)
 
         # Email should remain unchanged (in allowed list)
@@ -154,7 +138,7 @@ class TestDictWalker(unittest.TestCase):
         def custom_callback(item, key, pattern_key, breadcrumbs):
             return f"CUSTOM_REDACTED_{pattern_key}"
 
-        walker = DictWalker(callback=custom_callback)  # type: ignore
+        walker = DataWalker(callback=custom_callback)  # type: ignore
         result = walker.walk_and_replace(test_data)
 
         # Values should be replaced with custom callback output
@@ -175,7 +159,7 @@ class TestDictWalker(unittest.TestCase):
         }
 
         # Configure known path for user.profile.contact
-        walker = DictWalker(known_paths=['user.profile.contact'])  # type: ignore
+        walker = DataWalker(known_paths=['user.profile.contact'])  # type: ignore
         result = walker.walk_and_replace(test_data)
 
         # The contact should be replaced due to known path
@@ -194,7 +178,7 @@ class TestDictWalker(unittest.TestCase):
         }
 
         # Add extra pattern to match USER followed by digits
-        walker = DictWalker(extras=[r'USER\d+'])  # type: ignore
+        walker = DataWalker(extras=[r'USER\d+'])  # type: ignore
         result = walker.walk_and_replace(test_data)
 
         # user_id should be replaced due to extra pattern
@@ -313,16 +297,16 @@ class TestDictWalker(unittest.TestCase):
         self.assertIs(result, test_data)
         self.assertNotEqual(test_data['email'], original_email)
 
-    @patch('doubletake.searcher.dict_walker.DataFaker')
+    @patch('doubletake.searcher.data_walker.DataFaker')
     def test_walk_and_replace_uses_data_faker(self, mock_data_faker_class) -> None:
-        """Test that DictWalker uses DataFaker for replacement values."""
+        """Test that DataWalker uses DataFaker for replacement values."""
         mock_data_faker = Mock()
         mock_data_faker.get_fake_data.return_value = "FAKE_DATA"
         mock_data_faker_class.return_value = mock_data_faker
 
         test_data = {"email": "test@example.com"}
 
-        walker = DictWalker()
+        walker = DataWalker()
         walker.walk_and_replace(test_data)
 
         # DataFaker should have been called
@@ -398,7 +382,7 @@ class TestDictWalker(unittest.TestCase):
             callback_calls.append((item, key, pattern_key, breadcrumbs))
             return "CALLBACK_REPLACED"
 
-        walker = DictWalker(callback=tracking_callback)  # type: ignore
+        walker = DataWalker(callback=tracking_callback)  # type: ignore
         walker.walk_and_replace(test_data)
 
         # Callback should have been called for PII fields
@@ -466,7 +450,7 @@ class TestDictWalker(unittest.TestCase):
         def list_callback(item, key, pattern_key, breadcrumbs):
             return f"LIST_CALLBACK_{pattern_key}_{key}"
 
-        walker = DictWalker(callback=list_callback)  # type: ignore
+        walker = DataWalker(callback=list_callback)  # type: ignore
         result = walker.walk_and_replace(test_data)
 
         # Callback should be used for list items with PII
@@ -475,7 +459,7 @@ class TestDictWalker(unittest.TestCase):
         # Non-PII should remain unchanged
         self.assertEqual(result["contact_list"][2], "normal text")  # type: ignore
 
-    @patch('doubletake.searcher.dict_walker.DataFaker')
+    @patch('doubletake.searcher.data_walker.DataFaker')
     def test_walk_and_replace_list_with_faker(self, mock_data_faker_class) -> None:
         """Test PII replacement in lists using DataFaker."""
         # Test line 163: DataFaker handling for list items
@@ -487,7 +471,7 @@ class TestDictWalker(unittest.TestCase):
             "emails": ["test@example.com", "another@test.com"]
         }
 
-        walker = DictWalker()
+        walker = DataWalker()
         result = walker.walk_and_replace(test_data)
 
         # DataFaker should have been called for list items
@@ -508,7 +492,7 @@ class TestDictWalker(unittest.TestCase):
         original_normal = test_data["normal_field"]
 
         # Configure known path for top-level field (empty breadcrumbs path)
-        walker = DictWalker(known_paths=['sensitive_field'])  # type: ignore
+        walker = DataWalker(known_paths=['sensitive_field'])  # type: ignore
         result = walker.walk_and_replace(test_data)
 
         # The known path should trigger replacement (line 129 coverage)

@@ -17,7 +17,8 @@ setup(
     python_requires='>=3.0',
     install_requires=[
         'faker',
-        'msgspec'
+        'msgspec',
+        'typing_extensions'
     ],
     classifiers=[
         'Environment :: Web Environment',

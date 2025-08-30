@@ -12,6 +12,7 @@ allow_prereleases = true
 [packages]
 faker = "*"
 msgspec = "*"
+typing_extensions = "*"
 
 [dev-packages]
 autopep8 = "*"

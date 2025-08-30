@@ -8,8 +8,8 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=bugs)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
-[![pypi package](https://img.shields.io/pypi/v/doubletake-api?color=%2334D058&label=pypi%20package)](https://pypi.org/project/doubletake/)
-[![python](https://img.shields.io/pypi/pyversions/doubletake-api.svg?color=%2334D058)](https://pypi.org/project/doubletake)
+[![pypi package](https://img.shields.io/pypi/v/doubletake?color=%2334D058&label=pypi%20package)](https://pypi.org/project/doubletake/)
+[![python](https://img.shields.io/pypi/pyversions/doubletake.svg?color=%2334D058)](https://pypi.org/project/doubletake)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dual/doubletake/issues)
 
 doubletake is a powerful, flexible library for automatically detecting and replacing Personally Identifiable Information (PII) in your data structures. Whether you're anonymizing datasets for testing, protecting sensitive information in logs, or ensuring GDPR compliance, doubletake makes it effortless.

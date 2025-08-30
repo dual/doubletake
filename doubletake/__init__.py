@@ -23,7 +23,7 @@ class DoubleTake:
         __use_faker (bool): Whether to use fake data generation for replacements
         __callback (Optional[Callable]): Custom callback function for PII replacement
         __json_grepper (JSONGrepper): Handler for JSON-based PII replacement
-        __dict_walker (DataWalker): Handler for dictionary traversal and replacement
+        __data_walker (DataWalker): Handler for dictionary traversal and replacement
 
     Example:
         Basic usage with default settings:
@@ -69,7 +69,7 @@ class DoubleTake:
         self.__use_faker: bool = kwargs.get('use_faker', False)  # type: ignore
         self.__callback: Optional[Callable] = kwargs.get('callback', None)  # type: ignore
         self.__json_grepper: JSONGrepper = JSONGrepper(**kwargs)
-        self.__dict_walker: DataWalker = DataWalker(**kwargs)
+        self.__data_walker: DataWalker = DataWalker(**kwargs)
 
     def mask_data(self, data: list[Any]) -> list[Any]:
         """
@@ -105,4 +105,4 @@ class DoubleTake:
     def __process_data_item(self, item: Any) -> Any:
         if not self.__use_faker and self.__callback is None:
             return self.__json_grepper.grep_and_replace(item)
-        return self.__dict_walker.walk_and_replace(item)
+        return self.__data_walker.walk_and_replace(item)

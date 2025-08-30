@@ -154,7 +154,7 @@ class TestDoubleTake(unittest.TestCase):
             return f"[CUSTOM_MASKED_{pattern_key.upper() if pattern_key else 'UNKNOWN'}]"
 
         db = DoubleTake(
-            use_faker=True,  # This enables dict_walker which uses callbacks
+            use_faker=True,  # This enables data_walker which uses callbacks
             callback=custom_masker
         )
 

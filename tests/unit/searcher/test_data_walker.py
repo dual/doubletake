@@ -22,7 +22,7 @@ class TestDataWalker(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures before each test method."""
-        self.dict_walker = DataWalker()
+        self.data_walker = DataWalker()
 
     def test_init_with_default_settings(self) -> None:
         """Test DataWalker initialization with default settings."""
@@ -50,7 +50,7 @@ class TestDataWalker(unittest.TestCase):
         original_phone = test_data['phone']
         original_ssn = test_data['ssn']
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Should return the modified dict
         self.assertIsNotNone(result)
@@ -79,7 +79,7 @@ class TestDataWalker(unittest.TestCase):
         original_billing_ssn = test_data['transaction']['customer']['billing']['ssn']
         original_shipping_email = test_data['transaction']['shipping']['contact']
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Verify nested PII was replaced
         self.assertNotEqual(
@@ -103,7 +103,7 @@ class TestDataWalker(unittest.TestCase):
         original_emp1_email = test_data['employee_records'][0]['personal_info']['email']
         original_emp2_ssn = test_data['employee_records'][1]['personal_info']['ssn']
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Verify PII in list items was replaced
         self.assertNotEqual(
@@ -193,7 +193,7 @@ class TestDataWalker(unittest.TestCase):
         original_user1_email = test_data['data']['users'][0]['email']
         original_user2_phone = test_data['data']['users'][1]['profile']['phone']
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Verify nested API data PII was replaced
         self.assertNotEqual(
@@ -217,7 +217,7 @@ class TestDataWalker(unittest.TestCase):
         original_card_number = test_data['payment']['card_number']
         original_shipping_phone = test_data['shipping']['phone']
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Verify all PII types were replaced
         self.assertNotEqual(result['customer']['email'], original_customer_email)  # type: ignore
@@ -235,7 +235,7 @@ class TestDataWalker(unittest.TestCase):
         original_email = test_data['personal']['email']
         original_emergency_phone = test_data['emergency_contact']['phone']
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Verify medical PII was replaced
         self.assertNotEqual(result['personal']['ssn'], original_ssn)  # type: ignore
@@ -253,7 +253,7 @@ class TestDataWalker(unittest.TestCase):
         original_email = test_data['account_holder']['email']
         original_credit_card = test_data['accounts'][1]['number']
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Verify financial PII was replaced
         self.assertNotEqual(result['account_holder']['ssn'], original_ssn)  # type: ignore
@@ -263,7 +263,7 @@ class TestDataWalker(unittest.TestCase):
     def test_walk_and_replace_empty_dict(self) -> None:
         """Test behavior with empty dictionary."""
         test_data = {}
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         self.assertIsNotNone(result)
         self.assertEqual(result, {})
@@ -280,7 +280,7 @@ class TestDataWalker(unittest.TestCase):
         }
         original_data = copy.deepcopy(test_data)
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Data should remain unchanged
         self.assertEqual(result, original_data)  # type: ignore
@@ -291,7 +291,7 @@ class TestDataWalker(unittest.TestCase):
         original_email = test_data['email']
 
         # Call walk_and_replace
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Original data should be modified
         self.assertIs(result, test_data)
@@ -319,7 +319,7 @@ class TestDataWalker(unittest.TestCase):
             "contact_info": "user@company.com"
         }
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # The email should be replaced
         self.assertIsNotNone(result)
@@ -340,7 +340,7 @@ class TestDataWalker(unittest.TestCase):
         test_data = copy.deepcopy(COMPLEX_DATA_STRUCTURES[0])
         original_keys = set(test_data.keys())
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Top-level structure should be preserved
         self.assertEqual(set(result.keys()), original_keys)  # type: ignore
@@ -361,7 +361,7 @@ class TestDataWalker(unittest.TestCase):
             "email": "test@example.com"  # This should be replaced
         }
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Non-string values should remain unchanged
         self.assertEqual(result['count'], 123)  # type: ignore
@@ -405,7 +405,7 @@ class TestDataWalker(unittest.TestCase):
             ]
         }
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # Should process nested lists
         self.assertIsNotNone(result)
@@ -426,7 +426,7 @@ class TestDataWalker(unittest.TestCase):
         original_phone1 = test_data["phone_list"][0]
         original_email_in_mixed = test_data["mixed_list"][2]
 
-        result = self.dict_walker.walk_and_replace(test_data)
+        result = self.data_walker.walk_and_replace(test_data)
 
         # PII in lists should be replaced
         self.assertNotEqual(result["email_list"][0], original_email1)  # type: ignore

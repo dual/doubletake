@@ -13,7 +13,7 @@ class TestConfigValidator(unittest.TestCase):
 
     def test_allowed_keys_class_attribute(self) -> None:
         """Test that ConfigValidator has the correct allowed_keys."""
-        expected_keys = ['email', 'phone', 'credit_card', 'ssn']
+        expected_keys = ['email', 'phone', 'credit_card', 'ssn', 'ip_address', 'url']
         self.assertEqual(ConfigValidator.allowed_keys, expected_keys)
 
     def test_validate_empty_config(self) -> None:
@@ -308,3 +308,149 @@ class TestConfigValidator(unittest.TestCase):
                     re.compile(pattern)
                 except Exception as e:
                     self.fail(f"Valid regex pattern failed: {pattern}, error: {e}")
+
+    def test_validate_use_faker_boolean_check(self) -> None:
+        """Test validation of use_faker parameter type checking."""
+        # Valid boolean values
+        valid_configs = [
+            {'use_faker': True},
+            {'use_faker': False},
+            {'use_faker': None},  # None should be allowed
+        ]
+
+        for config in valid_configs:
+            with self.subTest(config=config):
+                try:
+                    ConfigValidator.validate(**config)  # type: ignore
+                except Exception as e:
+                    self.fail(f"Valid use_faker validation failed: {config}, error: {e}")
+
+        # Invalid non-boolean values
+        invalid_configs = [
+            {'use_faker': 'true'},
+            {'use_faker': 1},
+            {'use_faker': 0},
+            {'use_faker': []},
+            {'use_faker': {}},
+            {'use_faker': 'false'},
+        ]
+
+        for config in invalid_configs:
+            with self.subTest(config=config):
+                with self.assertRaises(ValueError) as context:
+                    ConfigValidator.validate(**config)  # type: ignore
+                self.assertIn('use_faker', str(context.exception))
+                self.assertIn('boolean', str(context.exception))
+
+    def test_validate_maintain_length_boolean_check(self) -> None:
+        """Test validation of maintain_length parameter type checking."""
+        # Valid boolean values
+        valid_configs = [
+            {'maintain_length': True},
+            {'maintain_length': False},
+            {'maintain_length': None},  # None should be allowed
+        ]
+
+        for config in valid_configs:
+            with self.subTest(config=config):
+                try:
+                    ConfigValidator.validate(**config)  # type: ignore
+                except Exception as e:
+                    self.fail(f"Valid maintain_length validation failed: {config}, error: {e}")
+
+        # Invalid non-boolean values
+        invalid_configs = [
+            {'maintain_length': 'true'},
+            {'maintain_length': 1},
+            {'maintain_length': 0},
+            {'maintain_length': []},
+            {'maintain_length': {}},
+            {'maintain_length': 'false'},
+        ]
+
+        for config in invalid_configs:
+            with self.subTest(config=config):
+                with self.assertRaises(ValueError) as context:
+                    ConfigValidator.validate(**config)  # type: ignore
+                self.assertIn('maintain_length', str(context.exception))
+                self.assertIn('boolean', str(context.exception))
+
+    def test_validate_replace_with_string_check(self) -> None:
+        """Test validation of replace_with parameter type checking."""
+        # Valid string values
+        valid_configs = [
+            {'replace_with': '*'},
+            {'replace_with': 'REDACTED'},
+            {'replace_with': ''},  # Empty string should be valid
+            {'replace_with': '###'},
+            {'replace_with': 'X'},
+            {'replace_with': None},  # None should be allowed
+        ]
+
+        for config in valid_configs:
+            with self.subTest(config=config):
+                try:
+                    ConfigValidator.validate(**config)  # type: ignore
+                except Exception as e:
+                    self.fail(f"Valid replace_with validation failed: {config}, error: {e}")
+
+        # Invalid non-string values
+        invalid_configs = [
+            {'replace_with': 123},
+            {'replace_with': True},
+            {'replace_with': False},
+            {'replace_with': []},
+            {'replace_with': {}},
+            {'replace_with': 42.5},
+        ]
+
+        for config in invalid_configs:
+            with self.subTest(config=config):
+                with self.assertRaises(ValueError) as context:
+                    ConfigValidator.validate(**config)  # type: ignore
+                self.assertIn('replace_with', str(context.exception))
+                self.assertIn('string', str(context.exception))
+
+    def test_validate_extras_list_type_check(self) -> None:
+        """Test validation of extras parameter type checking (must be list)."""
+        # Valid list values (empty and with contents tested elsewhere)
+        valid_configs = [
+            {'extras': []},
+            {'extras': [r'\d+']},
+            {'extras': [r'\d+', r'[a-z]+']},
+        ]
+
+        for config in valid_configs:
+            with self.subTest(config=config):
+                try:
+                    ConfigValidator.validate(**config)  # type: ignore
+                except Exception as e:
+                    self.fail(f"Valid extras list validation failed: {config}, error: {e}")
+
+        # Invalid non-list values
+        invalid_configs = [
+            {'extras': 'not_a_list'},
+            {'extras': r'\d+'},  # Single string instead of list
+            {'extras': 123},
+            {'extras': True},
+            {'extras': {}},  # Dictionary instead of list
+            {'extras': set()},  # Set instead of list
+        ]
+
+        for config in invalid_configs:
+            with self.subTest(config=config):
+                with self.assertRaises(ValueError) as context:
+                    ConfigValidator.validate(**config)  # type: ignore
+                error_msg = str(context.exception)
+                self.assertIn('extras', error_msg)
+                self.assertIn('list', error_msg)
+                self.assertIn('regexstrings', error_msg)
+
+    def test_validate_extras_none_handling(self) -> None:
+        """Test that None extras is handled correctly."""
+        # None should not raise an error (similar to other None parameters)
+        config = {'extras': None}
+        try:
+            ConfigValidator.validate(**config)  # type: ignore
+        except Exception as e:
+            self.fail(f"None extras should be valid: {e}")

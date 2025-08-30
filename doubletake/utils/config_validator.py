@@ -45,7 +45,7 @@ class ConfigValidator:
         ValueError: When any configuration parameter is invalid, with descriptive
             error messages indicating the specific validation failure
     """
-    allowed_keys: list[str] = ['email', 'phone', 'credit_card', 'ssn']
+    allowed_keys: list[str] = ['email', 'phone', 'credit_card', 'ssn', 'ip_address', 'url']
 
     @staticmethod
     def validate(**config: Unpack[Settings]) -> None:
@@ -54,10 +54,18 @@ class ConfigValidator:
             raise ValueError(f'Invalid configuration keys: {not_in_allowed}')
         if config.get('callback') is not None and not callable(config.get('callback')):
             raise ValueError('The "callback" must be a callable function if provided.')
+        if config.get('use_faker') is not None and not isinstance(config.get('use_faker'), bool):
+            raise ValueError('The "use_faker" key must be a boolean if provided.')
+        if config.get('maintain_length') is not None and not isinstance(config.get('maintain_length'), bool):
+            raise ValueError('The "maintain_length" key must be a boolean if provided.')
+        if config.get('replace_with') is not None and not isinstance(config.get('replace_with'), str):
+            raise ValueError('The "replace_with" key must be a string if provided.')
+        if config.get('extras') is not None and not isinstance(config.get('extras'), list):
+            raise ValueError('The "extras" key must be a list of regexstrings if provided.')
 
         # Validate extras as regex patterns
-        extras = config.get('extras', [])
-        if len(extras) > 0:
+        extras = config.get('extras')
+        if extras is not None and len(extras) > 0:
             for item in extras:
                 if not isinstance(item, str):
                     raise ValueError('The "extras" key must be a list of regexstrings if provided.')

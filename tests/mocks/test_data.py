@@ -292,6 +292,24 @@ MIXED_STRING_DATA: List[str] = [
     "Credit card 4532-1111-2222-3333 declined. Please contact card.support@bank.com"
 ]
 
+# Test data for allowed user emails within dict structures
+ALLOWED_USER_EMAILS: List[Dict[str, Any]] = [
+    {
+        "user": "allowed.user@example.net",
+        "details": {
+            "email": "allowed.user@example.net",
+            "phone": "555-123-4567"
+        }
+    },
+    {
+        "user": "not.allowed.user@example.net",
+        "details": {
+            "email": "not.allowed.user@example.net",
+            "phone": "555-123-4567"
+        }
+    }
+]
+
 # All test data combined for easy access
 ALL_TEST_DATA = {
     "users": SAMPLE_USERS,
@@ -303,5 +321,6 @@ ALL_TEST_DATA = {
     "medical": MEDICAL_RECORDS,
     "financial": FINANCIAL_DATA,
     "social": SOCIAL_PROFILES,
-    "strings": MIXED_STRING_DATA
+    "strings": MIXED_STRING_DATA,
+    "allowed_emails": ALLOWED_USER_EMAILS
 }

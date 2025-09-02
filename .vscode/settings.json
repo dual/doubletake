@@ -12,6 +12,6 @@
     },
     "sonarlint.connectedMode.project": {
         "connectionId": "dual-github-personal-mac",
-        "projectKey": "dual_chilo"
+        "projectKey": "dual_doubletake"
     }
 }

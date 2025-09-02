@@ -1,7 +1,8 @@
 import re
 
-from typing_extensions import Unpack
+from typing_extensions import Unpack, Any
 
+from doubletake.utils.data_faker import DataFaker
 from doubletake.types.settings import Settings
 
 
@@ -38,7 +39,7 @@ class PatternManager:
         Basic usage:
         >>> pm = PatternManager()
         >>> text = "Contact john@example.com or call 555-123-4567"
-        >>> result = pm.replace_pattern(pm.patterns['email'], text)
+        >>> result = pm.replace_pattern('email', pm.patterns['email'], text)
 
         With custom settings:
         >>> pm = PatternManager(
@@ -53,6 +54,8 @@ class PatternManager:
     """
 
     def __init__(self, **kwargs: Unpack[Settings]) -> None:
+        self.data_faker = DataFaker()
+        self.__use_faker = kwargs.get('use_faker', False)  # type: ignore
         self.extras: list[str] = kwargs.get('extras', [])  # type: ignore
         self.replace_with: str = str(kwargs.get('replace_with', '*'))
         self.maintain_length: bool = kwargs.get('maintain_length', False)  # type: ignore
@@ -64,12 +67,18 @@ class PatternManager:
             'ip_address': r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b',
             'url': r'https?://(?:[-\w.])+(?:[:\d]+)?(?:/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:\w*))?)?'
         }
+        self.all = list(self.patterns.items()) + list(enumerate(self.extras))
 
-    def replace_pattern(self, pattern: str, json_item: str) -> str:
-        replace_with = self.get_replace_value(pattern, json_item)
+    def replace_pattern(self, pattern_key, pattern: Any, json_item: str) -> str:
+        replace_with = self.get_replace_with(pattern_key, pattern, json_item)
         return re.sub(pattern, replace_with, json_item, flags=re.IGNORECASE)
 
-    def get_replace_value(self, pattern: str, item: str) -> str:
+    def replace_value(self, pattern_key: Any, pattern: str, value: str) -> str:
+        return self.get_replace_with(pattern_key, pattern, value)
+
+    def get_replace_with(self, pattern_key: Any, pattern: str, item: str) -> str:
+        if self.__use_faker:
+            return self.data_faker.get_fake_data(pattern_key)
         if not self.maintain_length:
             return self.replace_with
         match = re.search(pattern, item)

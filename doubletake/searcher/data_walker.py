@@ -2,7 +2,6 @@ import re
 from typing import Any, Callable, Optional, Union
 from typing_extensions import Unpack
 
-from doubletake.utils.data_faker import DataFaker
 from doubletake.utils.pattern_manager import PatternManager
 from doubletake.types.settings import Settings
 
@@ -69,11 +68,8 @@ class DataWalker:
         self.__known_paths: list[str] = kwargs.get('known_paths', [])  # type: ignore
         self.__callback: Optional[Callable] = kwargs.get('callback', None)  # type: ignore
         self.__pattern_manager: PatternManager = PatternManager(**kwargs)
-        self.__data_faker: DataFaker = DataFaker()
 
-    def walk_and_replace(self, item: Any) -> Union[str, None, dict[str, Any]]:
-        if not isinstance(item, dict):
-            return self.__replace_string_value(item)
+    def walk_and_replace(self, item: dict[str, Any]) -> dict[str, Any]:
         self.__breadcrumbs = set()
         self.__walk_dict(item, None)
         return item
@@ -81,119 +77,49 @@ class DataWalker:
     def __walk_dict(self, item: dict[str, Any], current_key: Optional[str]) -> None:
         if current_key is not None:
             self.__breadcrumbs.add(current_key)
-        # Create a list of keys to avoid "dictionary changed size during iteration" error
-        keys = list(item.keys())
-        for key in keys:
+        for key in item.keys():
             self.__determine_next_step(item, key)
 
     def __walk_list(self, item: list[Any]) -> None:
         for key, _ in enumerate(item):
             self.__determine_next_step(item, key)
 
-    def __determine_next_step(self, item: Union[dict[str, Any], list[Any]], key: Union[str, int]) -> None:
-        if isinstance(item, dict) and isinstance(key, str):
-            if isinstance(item[key], dict):
-                self.__walk_dict(item[key], key)
-            elif isinstance(item[key], list):
-                self.__walk_list(item[key])
-            else:
-                self.__replace_value_if_matches_pattern(item, key)
-        elif isinstance(item, list) and isinstance(key, int):
-            if isinstance(item[key], dict):
-                self.__walk_dict(item[key], str(key))
-            elif isinstance(item[key], list):
-                self.__walk_list(item[key])
-            else:
-                self.__replace_value_if_matches_pattern(item, key)
+    def __determine_next_step(self, item: Any, key: Union[str, int]) -> None:
+        if isinstance(item[key], dict):  # type: ignore
+            self.__walk_dict(item[key], str(key))  # type: ignore
+        elif isinstance(item[key], list):  # type: ignore
+            self.__walk_list(item[key])  # type: ignore
+        else:
+            self.__replace_value_if_matches_pattern(item, key)
 
-    def __replace_value_if_matches_pattern(self, item: Union[dict[str, Any], list[Any]], key: Union[str, int]) -> None:
-        self.__replace_known_patterns(item, key)
-        self.__replace_extra_patterns(item, key)
-        self.__replace_known_paths(item, key)
+    def __replace_value_if_matches_pattern(self, item: Any, key: Union[str, int]) -> None:
+        self.__replace_patterns(item, key)
+        self.__replace_known_paths(item)
 
-    def __replace_known_patterns(self, item: Union[dict[str, Any], list[Any]], key: Union[str, int]) -> None:
-        for pattern_key, pattern_value in self.__pattern_manager.patterns.items():
-            if pattern_key in self.__allowed:
+    def __replace_patterns(self, item: Any, key: Union[str, int]) -> None:
+        for pattern_key, pattern_value in self.__pattern_manager.all:
+            if isinstance(pattern_key, str) and pattern_key in self.__allowed:
                 continue
-            self.__search_and_replace(pattern_key, pattern_value, item, key)
+            self.__search_and_replace(pattern_key if isinstance(pattern_key, str) else None, pattern_value, item, key)
 
-    def __replace_extra_patterns(self, item: Union[dict[str, Any], list[Any]], key: Union[str, int]) -> None:
-        for pattern in self.__pattern_manager.extras:
-            self.__search_and_replace(None, pattern, item, key)
-
-    def __replace_known_paths(self, item: Union[dict[str, Any], list[Any]], _: Union[str, int]) -> None:
+    def __replace_known_paths(self, item: Any) -> None:
         for known_pattern in self.__known_paths:
             known_list = known_pattern.split('.')
             key_to_change = known_list.pop()
             if known_list == list(self.__breadcrumbs):
-                self.__replace_value(key_to_change, item, key_to_change)
+                if isinstance(item, dict) and key_to_change in item:
+                    self.__replace_value(key_to_change, item, key_to_change)
 
-    def __search_and_replace(
-        self,
-        pattern_key: Optional[str],
-        pattern_value: str,
-        item: Union[dict[str, Any], list[Any]],
-        key: Union[str, int]
-    ) -> None:
-        # Only search in string values
-        if isinstance(item, dict) and isinstance(key, str) and isinstance(item[key], str):
-            match = re.search(pattern_value, item[key])
-            if match:
-                self.__replace_value(pattern_key, item, key)
-        elif isinstance(item, list) and isinstance(key, int) and isinstance(item[key], str):
-            match = re.search(pattern_value, item[key])
-            if match:
-                self.__replace_value(pattern_key, item, key)
-
-    def __replace_value(
-        self,
-        pattern_key: Optional[str],
-        item: Union[dict[str, Any], list[Any]],
-        key: Union[str, int]
-    ) -> None:
-        if self.__callback is not None and callable(self.__callback):
-            if isinstance(item, dict) and isinstance(key, str):
-                item[key] = self.__callback(item, key, pattern_key, list(self.__breadcrumbs))
-            elif isinstance(item, list) and isinstance(key, int):
-                item[key] = self.__callback(item, key, pattern_key, list(self.__breadcrumbs))
+    def __search_and_replace(self, pattern_key: Optional[Union[str, int]], pattern_value: str, item: Any, key: Union[str, int]) -> None:
+        if not isinstance(item[key], str):  # type: ignore
             return
+        match = re.search(pattern_value, item[key])  # type: ignore
+        if match:
+            self.__replace_value(pattern_key, item, key)
 
-        if isinstance(item, dict) and isinstance(key, str):
-            item[key] = self.__data_faker.get_fake_data(pattern_key)
-        elif isinstance(item, list) and isinstance(key, int):
-            item[key] = self.__data_faker.get_fake_data(pattern_key)
-
-    def __replace_string_value(self, item) -> Union[str, None]:
-        if not isinstance(item, str):
-            return None
-        item = self.__replace_known_patterns_in_string(item)
-        item = self.__replace_extra_patterns_in_string(item)
-        return item
-
-    def __replace_known_patterns_in_string(self, item: str) -> str:
-        for pattern_key, pattern_value in self.__pattern_manager.patterns.items():
-            if pattern_key in self.__allowed:
-                continue
-            match = re.search(pattern_value, item)
-            if match:
-                return re.sub(
-                    pattern_value,
-                    self.__data_faker.get_fake_data(pattern_key),
-                    item,
-                    count=0,
-                    flags=re.IGNORECASE
-                )
-        return item
-
-    def __replace_extra_patterns_in_string(self, item: str) -> str:
-        for pattern in self.__pattern_manager.extras:
-            match = re.search(pattern, item)
-            if match:
-                return re.sub(
-                    pattern,
-                    self.__data_faker.get_fake_data(None),
-                    item,
-                    count=0,
-                    flags=re.IGNORECASE
-                )
-        return item
+    def __replace_value(self, pattern_key: Optional[Union[str, int]], item: Any, key: Union[str, int]) -> None:
+        replacement = self.__pattern_manager.replace_value(pattern_key, pattern_key if isinstance(pattern_key, str) else '', item[key])
+        if self.__callback is not None and callable(self.__callback):
+            item[key] = self.__callback(pattern_key, replacement, item, key, list(self.__breadcrumbs))  # type: ignore
+        else:
+            item[key] = replacement

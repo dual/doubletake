@@ -66,7 +66,7 @@ class DataFaker:
     def get_fake_data(self, key: Optional[str]) -> str:
         if key is None or key not in self.fake_map:
             if key is not None:
-                func: Callable[[], str] = getattr(self.faker, key, self.fake_map['other'])
+                func: Callable[[], str] = getattr(self.faker, str(key), self.fake_map['other'])
                 return func()
             return self.fake_map['other']()
         return self.fake_map[key]()

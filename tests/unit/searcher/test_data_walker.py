@@ -4,7 +4,6 @@ Tests dictionary traversal and PII pattern replacement functionality.
 """
 import copy
 import unittest
-from unittest.mock import Mock, patch
 
 from doubletake.searcher.data_walker import DataWalker
 from tests.mocks.test_data import (
@@ -31,7 +30,7 @@ class TestDataWalker(unittest.TestCase):
 
     def test_init_with_custom_settings(self) -> None:
         """Test DataWalker initialization with custom settings."""
-        def callback(item, key, pattern, breadcrumbs):
+        def callback(pattern_key, replacement, item, key, breadcrumbs):
             return "REDACTED"
 
         walker = DataWalker(  # type: ignore
@@ -135,7 +134,7 @@ class TestDataWalker(unittest.TestCase):
         """Test PII replacement using custom callback function."""
         test_data = copy.deepcopy(SAMPLE_USERS[0])
 
-        def custom_callback(item, key, pattern_key, breadcrumbs):
+        def custom_callback(pattern_key, replacement, item, key, breadcrumbs):
             return f"CUSTOM_REDACTED_{pattern_key}"
 
         walker = DataWalker(callback=custom_callback)  # type: ignore
@@ -160,7 +159,7 @@ class TestDataWalker(unittest.TestCase):
 
         # Configure known path for user.profile.contact
         walker = DataWalker(known_paths=['user.profile.contact'])  # type: ignore
-        result = walker.walk_and_replace(test_data)
+        result = walker.walk_and_replace(copy.deepcopy(test_data))
 
         # The contact should be replaced due to known path
         # Note: We'll check if it's been processed regardless of the specific replacement value
@@ -297,20 +296,15 @@ class TestDataWalker(unittest.TestCase):
         self.assertIs(result, test_data)
         self.assertNotEqual(test_data['email'], original_email)
 
-    @patch('doubletake.searcher.data_walker.DataFaker')
-    def test_walk_and_replace_uses_data_faker(self, mock_data_faker_class) -> None:
+    def test_walk_and_replace_uses_data_faker(self) -> None:
         """Test that DataWalker uses DataFaker for replacement values."""
-        mock_data_faker = Mock()
-        mock_data_faker.get_fake_data.return_value = "FAKE_DATA"
-        mock_data_faker_class.return_value = mock_data_faker
-
         test_data = {"email": "test@example.com"}
 
-        walker = DataWalker()
-        walker.walk_and_replace(test_data)
+        walker = DataWalker(use_faker=True)  # type: ignore
+        result = walker.walk_and_replace(copy.deepcopy(test_data))
 
         # DataFaker should have been called
-        mock_data_faker.get_fake_data.assert_called()
+        self.assertNotEqual(result['email'], test_data['email'])
 
     def test_walk_and_replace_multiple_patterns_same_field(self) -> None:
         """Test handling of fields that might match multiple patterns."""
@@ -378,8 +372,8 @@ class TestDataWalker(unittest.TestCase):
         test_data = {"email": "test@example.com", "nested": {"phone": "555-1234"}}
         callback_calls = []
 
-        def tracking_callback(item, key, pattern_key, breadcrumbs):
-            callback_calls.append((item, key, pattern_key, breadcrumbs))
+        def tracking_callback(pattern_key, replacement, item, key, breadcrumbs):
+            callback_calls.append((pattern_key, replacement, item, key, breadcrumbs))
             return "CALLBACK_REPLACED"
 
         walker = DataWalker(callback=tracking_callback)  # type: ignore
@@ -389,7 +383,7 @@ class TestDataWalker(unittest.TestCase):
         self.assertGreater(len(callback_calls), 0)
 
         # Check parameter types
-        for item, key, pattern_key, breadcrumbs in callback_calls:
+        for pattern_key, replacement, item, key, breadcrumbs in callback_calls:
             self.assertTrue(isinstance(item, (dict, list)))
             self.assertTrue(isinstance(key, (str, int)))
             self.assertTrue(isinstance(pattern_key, (str, type(None))))
@@ -447,7 +441,7 @@ class TestDataWalker(unittest.TestCase):
             "contact_list": ["john@example.com", "555-123-4567", "normal text"]
         }
 
-        def list_callback(item, key, pattern_key, breadcrumbs):
+        def list_callback(pattern_key, replacement, item, key, breadcrumbs):
             return f"LIST_CALLBACK_{pattern_key}_{key}"
 
         walker = DataWalker(callback=list_callback)  # type: ignore
@@ -459,26 +453,19 @@ class TestDataWalker(unittest.TestCase):
         # Non-PII should remain unchanged
         self.assertEqual(result["contact_list"][2], "normal text")  # type: ignore
 
-    @patch('doubletake.searcher.data_walker.DataFaker')
-    def test_walk_and_replace_list_with_faker(self, mock_data_faker_class) -> None:
+    def test_walk_and_replace_list_with_faker(self) -> None:
         """Test PII replacement in lists using DataFaker."""
         # Test line 163: DataFaker handling for list items
-        mock_data_faker = Mock()
-        mock_data_faker.get_fake_data.return_value = "FAKE_LIST_DATA"
-        mock_data_faker_class.return_value = mock_data_faker
-
         test_data = {
             "emails": ["test@example.com", "another@test.com"]
         }
 
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_data)
+        walker = DataWalker(use_faker=True)  # type: ignore
+        result = walker.walk_and_replace(copy.deepcopy(test_data))
 
-        # DataFaker should have been called for list items
-        mock_data_faker.get_fake_data.assert_called()
         # Values should be replaced with fake data
-        self.assertEqual(result["emails"][0], "FAKE_LIST_DATA")  # type: ignore
-        self.assertEqual(result["emails"][1], "FAKE_LIST_DATA")  # type: ignore
+        self.assertNotEqual(result["emails"][0], test_data["emails"][0])  # type: ignore
+        self.assertNotEqual(result["emails"][1], test_data["emails"][1])  # type: ignore
 
     def test_walk_and_replace_known_paths_triggers_replacement(self) -> None:
         """Test that known paths actually trigger value replacement (covers line 129)."""
@@ -507,176 +494,3 @@ class TestDataWalker(unittest.TestCase):
         if result["normal_field"] != original_normal:  # type: ignore
             # If it was replaced, it was due to PII pattern matching, not known paths
             pass  # This is acceptable
-
-    # Tests for __replace_string_value method through public interface
-    def test_replace_string_value_with_email(self) -> None:
-        """Test __replace_string_value with email string through walk_and_replace."""
-        test_email = "user@example.com"
-
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_email)
-
-        # Should return a replaced string (different from original)
-        self.assertIsInstance(result, str)
-        self.assertNotEqual(result, test_email)
-
-    def test_replace_string_value_with_phone(self) -> None:
-        """Test __replace_string_value with phone number string."""
-        test_phone = "555-123-4567"
-
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_phone)
-
-        # Should return a replaced string
-        self.assertIsInstance(result, str)
-        self.assertNotEqual(result, test_phone)
-
-    def test_replace_string_value_with_ssn(self) -> None:
-        """Test __replace_string_value with SSN string."""
-        test_ssn = "123-45-6789"
-
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_ssn)
-
-        # Should return a replaced string
-        self.assertIsInstance(result, str)
-        self.assertNotEqual(result, test_ssn)
-
-    def test_replace_string_value_with_credit_card(self) -> None:
-        """Test __replace_string_value with credit card number."""
-        test_cc = "4532-1234-5678-9012"
-
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_cc)
-
-        # Should return a replaced string
-        self.assertIsInstance(result, str)
-        self.assertNotEqual(result, test_cc)
-
-    def test_replace_string_value_with_no_pii(self) -> None:
-        """Test __replace_string_value with string containing no PII."""
-        test_string = "just a normal string with no sensitive data"
-
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_string)
-
-        # Should return the original string unchanged
-        self.assertEqual(result, test_string)
-
-    def test_replace_string_value_with_extra_patterns(self) -> None:
-        """Test __replace_string_value with extra regex patterns."""
-        test_string = "USER123456"
-
-        # Add extra pattern to match USER followed by digits
-        walker = DataWalker(extras=[r'USER\d+'])  # type: ignore
-        result = walker.walk_and_replace(test_string)
-
-        # Should return a replaced string due to extra pattern
-        self.assertIsInstance(result, str)
-        self.assertNotEqual(result, test_string)
-
-    def test_replace_string_value_with_multiple_patterns(self) -> None:
-        """Test __replace_string_value with string containing multiple PII patterns."""
-        test_string = "Contact: john@example.com or call 555-123-4567"
-
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_string)
-
-        # Should return a replaced string (first match should trigger replacement)
-        self.assertIsInstance(result, str)
-        self.assertNotEqual(result, test_string)
-
-    def test_replace_string_value_with_allowed_patterns(self) -> None:
-        """Test __replace_string_value respects allowed patterns."""
-        test_email = "user@example.com"
-
-        # Create walker with email in allowed list
-        walker = DataWalker(allowed=['email'])  # type: ignore
-        result = walker.walk_and_replace(test_email)
-
-        # Email should remain unchanged (in allowed list)
-        self.assertEqual(result, test_email)
-
-    def test_replace_string_value_with_non_string_input(self) -> None:
-        """Test __replace_string_value with non-string inputs returns None."""
-        walker = DataWalker()
-
-        # Test various non-string types
-        self.assertIsNone(walker.walk_and_replace(123))
-        self.assertIsNone(walker.walk_and_replace(True))
-        self.assertIsNone(walker.walk_and_replace(None))
-        self.assertIsNone(walker.walk_and_replace(45.67))
-        self.assertIsNone(walker.walk_and_replace(["list", "items"]))
-
-    def test_replace_string_value_empty_string(self) -> None:
-        """Test __replace_string_value with empty string."""
-        test_string = ""
-
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_string)
-
-        # Should return empty string unchanged
-        self.assertEqual(result, "")
-
-    def test_replace_string_value_whitespace_only(self) -> None:
-        """Test __replace_string_value with whitespace-only string."""
-        test_string = "   \t\n   "
-
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_string)
-
-        # Should return whitespace string unchanged (no PII patterns)
-        self.assertEqual(result, test_string)
-
-    @patch('doubletake.searcher.data_walker.DataFaker')
-    def test_replace_string_value_uses_data_faker(self, mock_data_faker_class) -> None:
-        """Test __replace_string_value uses DataFaker for replacements."""
-        mock_data_faker = Mock()
-        mock_data_faker.get_fake_data.return_value = "FAKE_EMAIL"
-        mock_data_faker_class.return_value = mock_data_faker
-
-        test_email = "test@example.com"
-
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_email)
-
-        # DataFaker should have been called
-        mock_data_faker.get_fake_data.assert_called()
-        # Result should be the fake data
-        self.assertEqual(result, "FAKE_EMAIL")
-
-    def test_replace_string_value_with_mixed_case_pii(self) -> None:
-        """Test __replace_string_value handles mixed case PII patterns."""
-        test_email = "User@EXAMPLE.COM"
-
-        walker = DataWalker()
-        result = walker.walk_and_replace(test_email)
-
-        # Should handle case-insensitive matching and replace
-        self.assertIsInstance(result, str)
-        self.assertNotEqual(result, test_email)
-
-    def test_replace_string_value_with_extra_pattern_only(self) -> None:
-        """Test __replace_string_value with string that only matches extra patterns."""
-        test_string = "CUSTOM-ID-98765"
-
-        # Add extra pattern that doesn't match standard PII
-        walker = DataWalker(extras=[r'CUSTOM-ID-\d+'])  # type: ignore
-        result = walker.walk_and_replace(test_string)
-
-        # Should be replaced due to extra pattern
-        self.assertIsInstance(result, str)
-        self.assertNotEqual(result, test_string)
-
-    def test_replace_string_value_processes_known_patterns_first(self) -> None:
-        """Test that __replace_string_value processes known patterns before extra patterns."""
-        # Use an email that would match both known email pattern and a custom extra pattern
-        test_string = "admin@company.com"
-
-        # Create a walker with an extra pattern that would also match
-        walker = DataWalker(extras=[r'admin@.*'])  # type: ignore
-        result = walker.walk_and_replace(test_string)
-
-        # Should be replaced (either by known email pattern or a custom extra pattern)
-        self.assertIsInstance(result, str)
-        self.assertNotEqual(result, test_string)

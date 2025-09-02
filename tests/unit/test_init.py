@@ -12,7 +12,9 @@ from tests.mocks.test_data import (
     COMPLEX_DATA_STRUCTURES,
     API_RESPONSES,
     ECOMMERCE_DATA,
-    ALL_TEST_DATA
+    ALL_TEST_DATA,
+    MIXED_STRING_DATA,
+    ALLOWED_USER_EMAILS
 )
 
 
@@ -40,7 +42,7 @@ class TestDoubleTake(unittest.TestCase):
 
     def test_init_with_callback(self) -> None:
         """Test doubletake initialization with callback function."""
-        def custom_callback(item: Any, key: str, pattern_key: str, breadcrumbs: List[str]) -> str:
+        def custom_callback(pattern_key: str, replacement: str, item: Any, key: str, breadcrumbs: List[str]) -> str:
             return "[REDACTED]"
 
         db = DoubleTake(
@@ -150,7 +152,7 @@ class TestDoubleTake(unittest.TestCase):
 
     def test_mask_data_with_callback_function(self) -> None:
         """Test masking using a custom callback function."""
-        def custom_masker(item: Any, key: str, pattern_key: str, breadcrumbs: List[str]) -> str:
+        def custom_masker(pattern_key: str, replacement: str, item: Any, key: str, breadcrumbs: List[str]) -> str:
             return f"[CUSTOM_MASKED_{pattern_key.upper() if pattern_key else 'UNKNOWN'}]"
 
         db = DoubleTake(
@@ -277,7 +279,7 @@ class TestDoubleTake(unittest.TestCase):
 
     def test_process_data_item_with_callback_and_faker(self) -> None:
         """Test the private method behavior with both callback and faker enabled."""
-        def test_callback(item: Any, key: str, pattern_key: str, breadcrumbs: List[str]) -> str:
+        def test_callback(pattern_key: str, replacement: str, item: Any, key: str, breadcrumbs: List[str]) -> str:
             return "[CALLBACK_MASKED]"
 
         db = DoubleTake(use_faker=True, callback=test_callback)
@@ -314,3 +316,45 @@ class TestDoubleTake(unittest.TestCase):
 
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 3)
+
+    def test_mask_data_with_mixed_string_data(self) -> None:
+        """Test masking with mixed string data containing various PII types."""
+        db = DoubleTake(use_faker=True)
+
+        test_data = MIXED_STRING_DATA.copy()
+        result = db.mask_data(test_data)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), len(test_data))
+
+    def test_mask_data_with_allowed_user_emails(self) -> None:
+        """Test masking with allowed user emails that should not be masked."""
+        db = DoubleTake(
+            replace_with='*',
+            allowed=['email'],
+            extras=[r'^(?!allowed\.user@example\.net$)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$']
+        )
+
+        test_data = ALLOWED_USER_EMAILS.copy()
+        result = db.mask_data(test_data)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), len(test_data))
+        self.assertEqual(result[0]['details']['email'], ALLOWED_USER_EMAILS[0]['details']['email'])
+        self.assertNotEqual(result[1]['details']['email'], ALLOWED_USER_EMAILS[0]['details']['email'])
+
+    def test_mask_data_with_allowed_user_emails_with_faker(self) -> None:
+        """Test masking with allowed user emails that should not be masked."""
+        db = DoubleTake(
+            use_faker=True,
+            allowed=['email'],
+            extras=[r'^(?!allowed\.user@example\.net$)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$']
+        )
+
+        test_data = ALLOWED_USER_EMAILS.copy()
+        result = db.mask_data(test_data)
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), len(test_data))
+        self.assertEqual(result[0]['details']['email'], ALLOWED_USER_EMAILS[0]['details']['email'])
+        self.assertNotEqual(result[1]['details']['email'], ALLOWED_USER_EMAILS[0]['details']['email'])

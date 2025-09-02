@@ -78,9 +78,7 @@ class JSONGrepper:
 
     def grep_and_replace(self, item: Any) -> Any:
         json_item: str = msgspec.json.encode(item).decode('utf-8')
-        for key, pattern in self.__pattern_manager.patterns.items():
+        for key, pattern in self.__pattern_manager.all:
             if key not in self.__allowed:
-                json_item = self.__pattern_manager.replace_pattern(pattern, json_item)
-        for pattern in self.__pattern_manager.extras:
-            json_item = self.__pattern_manager.replace_pattern(pattern, json_item)
+                json_item = self.__pattern_manager.replace_pattern(key, pattern, json_item)
         return msgspec.json.decode(json_item)

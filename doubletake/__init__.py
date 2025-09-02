@@ -3,6 +3,7 @@ from typing_extensions import Unpack
 
 from doubletake.searcher.json_grepper import JSONGrepper
 from doubletake.searcher.data_walker import DataWalker
+from doubletake.searcher.string_replacer import StringReplacer
 from doubletake.utils.config_validator import ConfigValidator
 from doubletake.types.settings import Settings
 
@@ -70,6 +71,7 @@ class DoubleTake:
         self.__callback: Optional[Callable] = kwargs.get('callback', None)  # type: ignore
         self.__json_grepper: JSONGrepper = JSONGrepper(**kwargs)
         self.__data_walker: DataWalker = DataWalker(**kwargs)
+        self.__string_replacer: StringReplacer = StringReplacer(**kwargs)
 
     def mask_data(self, data: list[Any]) -> list[Any]:
         """
@@ -105,4 +107,6 @@ class DoubleTake:
     def __process_data_item(self, item: Any) -> Any:
         if not self.__use_faker and self.__callback is None:
             return self.__json_grepper.grep_and_replace(item)
+        if isinstance(item, str):
+            return self.__string_replacer.receive_and_replace(item)
         return self.__data_walker.walk_and_replace(item)

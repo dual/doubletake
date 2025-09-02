@@ -107,14 +107,15 @@ masked_data = db.mask_data(data)
 ### Custom Replacement Logic
 
 ```python
-def custom_replacer(item, key, pattern_type, breadcrumbs):
+def custom_replacer(pattern_key: str, replacement: str, item: Any, key: str, breadcrumbs: List[str]):
     """Custom replacement with full context"""
-    if pattern_type == 'email':
+    if pattern_key == 'email':
         return "***REDACTED_EMAIL***"
-    elif pattern_type == 'ssn':
+    if pattern_key == 'ssn':
         return "XXX-XX-XXXX"
-    else:
+    if 'secret' in item[key]:
         return "***CLASSIFIED***"
+    return replacement
 
 db = DoubleTake(callback=custom_replacer)
 ```
@@ -156,6 +157,22 @@ doubletake offers two complementary processing strategies:
 ```python
 # Automatically chosen when no custom logic needed
 db = DoubleTake()  # Uses JSONGrepper internally
+```
+
+### 🔧 StringReplacer (Basic Functionality)
+
+- **Best for**: Simple string processing, single-level data structures
+- **Speed**: 🐰 Moderate performance for straightforward replacements
+- **Method**: Direct string pattern matching and replacement
+- **Features**: Basic pattern detection, simple replacements, lightweight processing
+- **Trade-offs**: No deep traversal, limited to string-to-string operations
+
+```python
+# Used for basic string replacement scenarios
+db = DoubleTake(use_faker=True)  # Uses StringReplacer for simple string input
+db = DoubleTake(replace_wit='x')  # Uses StringReplacer for simple string input
+# example simple string input
+# ['some log with your phone: 111-333-444', 'some log with your ssn: 123-456-7890']
 ```
 
 ### 🌳 DataWalker (Maximum Flexibility)
@@ -253,6 +270,19 @@ config = {
 
 db = DoubleTake(known_paths=['database.admin_email', 'api_keys.support_email'])
 sanitized_config = db.mask_data([config])[0]
+```
+
+### Log Sanitization
+
+```python
+# Remove secrets from config files
+logs = [
+    "Please contact our support team at support@company.com or call +1-555-SUPPORT",
+    "Your SSN 123-45-6789 has been verified. Email confirmation sent to user@domain.com",
+]
+
+db = DoubleTake()
+sanitized_logs = db.mask_data([logs])
 ```
 
 ## 🔬 Performance & Testing

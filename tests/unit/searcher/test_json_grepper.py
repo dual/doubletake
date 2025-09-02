@@ -301,6 +301,7 @@ class TestJSONGrepper(unittest.TestCase):
         mock_pattern_manager = Mock()
         mock_pattern_manager.patterns = {'email': r'[\w\.-]+@[\w\.-]+\.\w+'}
         mock_pattern_manager.extras = []
+        mock_pattern_manager.all = list(mock_pattern_manager.patterns.items())
         mock_pattern_manager.replace_pattern.return_value = '"REPLACED"'
         mock_pattern_manager_class.return_value = mock_pattern_manager
 

@@ -82,7 +82,7 @@ class TestPatternManager(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            result = manager.replace_pattern(manager.patterns['email'], test_case)
+            result = manager.replace_pattern('email', manager.patterns['email'], test_case)
             self.assertNotIn('@', result)
             self.assertIn('[EMAIL]', result)
 
@@ -99,7 +99,7 @@ class TestPatternManager(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            result = manager.replace_pattern(manager.patterns['phone'], test_case)
+            result = manager.replace_pattern('phone', manager.patterns['phone'], test_case)
             self.assertIn('[PHONE]', result)
 
     def test_ssn_pattern_matching(self) -> None:
@@ -114,7 +114,7 @@ class TestPatternManager(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            result = manager.replace_pattern(manager.patterns['ssn'], test_case)
+            result = manager.replace_pattern('ssn', manager.patterns['ssn'], test_case)
             self.assertIn('[SSN]', result)
 
     def test_credit_card_pattern_matching(self) -> None:
@@ -129,7 +129,7 @@ class TestPatternManager(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            result = manager.replace_pattern(manager.patterns['credit_card'], test_case)
+            result = manager.replace_pattern('credit_card', manager.patterns['credit_card'], test_case)
             self.assertIn('[CARD]', result)
 
     def test_ip_address_pattern_matching(self) -> None:
@@ -144,7 +144,7 @@ class TestPatternManager(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            result = manager.replace_pattern(manager.patterns['ip_address'], test_case)
+            result = manager.replace_pattern('ip_address', manager.patterns['ip_address'], test_case)
             self.assertIn('[IP]', result)
 
     def test_url_pattern_matching(self) -> None:
@@ -159,7 +159,7 @@ class TestPatternManager(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            result = manager.replace_pattern(manager.patterns['url'], test_case)
+            result = manager.replace_pattern('url', manager.patterns['url'], test_case)
             self.assertIn('[URL]', result)
 
     def test_replace_pattern_with_maintain_length_false(self) -> None:
@@ -167,7 +167,7 @@ class TestPatternManager(unittest.TestCase):
         manager = PatternManager(replace_with='***', maintain_length=False)
 
         test_string = 'Email me at test@example.com please'
-        result = manager.replace_pattern(manager.patterns['email'], test_string)
+        result = manager.replace_pattern('email', manager.patterns['email'], test_string)
 
         self.assertIn('***', result)
         self.assertNotIn('test@example.com', result)
@@ -178,7 +178,7 @@ class TestPatternManager(unittest.TestCase):
 
         test_string = 'Email: test@example.com'
         original_email = 'test@example.com'
-        result = manager.replace_pattern(manager.patterns['email'], test_string)
+        result = manager.replace_pattern('email', manager.patterns['email'], test_string)
 
         # The replacement should be the same length as the original email
         expected_replacement = 'X' * len(original_email)
@@ -196,7 +196,7 @@ class TestPatternManager(unittest.TestCase):
         ]
 
         for test_case in test_cases:
-            result = manager.replace_pattern(manager.patterns['email'], test_case)
+            result = manager.replace_pattern('email', manager.patterns['email'], test_case)
             self.assertIn('[MASKED]', result)
             self.assertNotIn('@', result.split('[MASKED]')[1] if '[MASKED]' in result else result)
 
@@ -205,7 +205,7 @@ class TestPatternManager(unittest.TestCase):
         manager = PatternManager(replace_with='[MASKED]')
 
         test_string = 'Contact admin@site.com or support@site.com for help'
-        result = manager.replace_pattern(manager.patterns['email'], test_string)
+        result = manager.replace_pattern('email', manager.patterns['email'], test_string)
 
         # Both emails should be replaced
         self.assertEqual(result.count('[MASKED]'), 2)
@@ -216,14 +216,14 @@ class TestPatternManager(unittest.TestCase):
         manager = PatternManager(replace_with='[MASKED]')
 
         test_string = 'This string has no email addresses'
-        result = manager.replace_pattern(manager.patterns['email'], test_string)
+        result = manager.replace_pattern('email', manager.patterns['email'], test_string)
 
         # String should remain unchanged
         self.assertEqual(result, test_string)
         self.assertNotIn('[MASKED]', result)
 
-    def test_get_replace_value_with_maintain_length_false(self) -> None:
-        """Test private method __get_replace_value with maintain_length=False."""
+    def test_get_replace_with_with_maintain_length_false(self) -> None:
+        """Test private method __get_replace_with with maintain_length=False."""
         manager = PatternManager(replace_with='XXX', maintain_length=False)
 
         # Use a simple pattern and test string
@@ -231,27 +231,27 @@ class TestPatternManager(unittest.TestCase):
         test_string = 'Number: 12345'
 
         # Access private method for testing
-        replace_value = manager.get_replace_value(pattern, test_string)
+        replace_value = manager.get_replace_with(None, pattern, test_string)
         self.assertEqual(replace_value, 'XXX')
 
-    def test_get_replace_value_with_maintain_length_true(self) -> None:
-        """Test private method __get_replace_value with maintain_length=True."""
+    def test_get_replace_with_with_maintain_length_true(self) -> None:
+        """Test private method __get_replace_with with maintain_length=True."""
         manager = PatternManager(replace_with='X', maintain_length=True)
 
         pattern = r'\d+'
         test_string = 'Number: 12345'
 
-        replace_value = manager.get_replace_value(pattern, test_string)
+        replace_value = manager.get_replace_with(None, pattern, test_string)
         self.assertEqual(replace_value, 'XXXXX')  # 5 X's for '12345'
 
-    def test_get_replace_value_no_match(self) -> None:
-        """Test __get_replace_value when pattern doesn't match."""
+    def test_get_replace_with_no_match(self) -> None:
+        """Test __get_replace_with when pattern doesn't match."""
         manager = PatternManager(replace_with='X', maintain_length=True)
 
         pattern = r'\d+'
         test_string = 'No numbers here'
 
-        replace_value = manager.get_replace_value(pattern, test_string)
+        replace_value = manager.get_replace_with(None, pattern, test_string)
         self.assertEqual(replace_value, 'X')  # Should return single replace_with char
 
     def test_extras_patterns_empty(self) -> None:
@@ -273,7 +273,7 @@ class TestPatternManager(unittest.TestCase):
         test_string = 'Code: ABC-12345 and date: 2024-01-15'
 
         for pattern in manager.extras:
-            result = manager.replace_pattern(pattern, test_string)
+            result = manager.replace_pattern(None, pattern, test_string)
             # At least one of the patterns should match and replace
             self.assertTrue(len(result) <= len(test_string) or '*' in result)
 
@@ -282,7 +282,7 @@ class TestPatternManager(unittest.TestCase):
         manager = PatternManager(replace_with='[HIDDEN]')
 
         test_string = 'Please contact us at support@company.com for assistance.'
-        result = manager.replace_pattern(manager.patterns['email'], test_string)
+        result = manager.replace_pattern(None, manager.patterns['email'], test_string)
 
         self.assertTrue(result.startswith('Please contact us at'))
         self.assertTrue(result.endswith('for assistance.'))
@@ -298,14 +298,14 @@ class TestPatternManager(unittest.TestCase):
         patterns_to_test = ['phone', 'email', 'ip_address']
 
         for pattern_name in patterns_to_test:
-            result = manager.replace_pattern(manager.patterns[pattern_name], test_string)
+            result = manager.replace_pattern(pattern_name, manager.patterns[pattern_name], test_string)
             self.assertIn('***', result)
 
     def test_edge_case_empty_string(self) -> None:
         """Test pattern replacement with empty string."""
         manager = PatternManager()
 
-        result = manager.replace_pattern(manager.patterns['email'], '')
+        result = manager.replace_pattern(None, manager.patterns['email'], '')
         self.assertEqual(result, '')
 
     def test_edge_case_special_characters_in_replace_with(self) -> None:
@@ -313,7 +313,7 @@ class TestPatternManager(unittest.TestCase):
         manager = PatternManager(replace_with='[REDACTED-$#@!]')
 
         test_string = 'Contact: test@example.com'
-        result = manager.replace_pattern(manager.patterns['email'], test_string)
+        result = manager.replace_pattern('email', manager.patterns['email'], test_string)
 
         self.assertIn('[REDACTED-$#@!]', result)
         self.assertNotIn('test@example.com', result)
@@ -339,7 +339,7 @@ class TestPatternManager(unittest.TestCase):
                 pattern = manager.patterns['ip_address']
 
             if pattern:
-                result = manager.replace_pattern(pattern, f'Value: {test_value}')
+                result = manager.replace_pattern(None, pattern, f'Value: {test_value}')
                 # Check that replacement maintains length
                 expected_replacement = replace_char * len(test_value)
                 self.assertIn(expected_replacement, result)

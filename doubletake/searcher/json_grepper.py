@@ -26,14 +26,17 @@ class JSONGrepper:
         - Single-pass pattern matching across all data
         - Preserves original data types and structure
         - Support for custom extra patterns
+        - Support for safe values (values that bypass replacement)
         - Configurable pattern exclusion (allowed list)
+        - Idempotent replacement support for consistency
 
     Processing Flow:
         1. Serialize input data to JSON string using msgspec
         2. Apply all enabled PII patterns via regex replacement
         3. Apply any extra user-defined patterns
-        4. Deserialize back to original data structure
-        5. Return processed data with preserved types
+        4. Respect safe values and allowed patterns
+        5. Deserialize back to original data structure
+        6. Return processed data with preserved types
 
     Performance Characteristics:
         - Faster than tree traversal for large datasets
@@ -49,7 +52,6 @@ class JSONGrepper:
 
     Attributes:
         __pattern_manager (PatternManager): Handles regex patterns and replacement
-        __allowed (list[str]): PII pattern types to exclude from replacement
 
     Example:
         Basic usage:
@@ -62,9 +64,12 @@ class JSONGrepper:
         >>> grepper = JSONGrepper(allowed=['email'])
         >>> # Skips email replacement, processes other PII types
 
-        With extra patterns:
-        >>> grepper = JSONGrepper(extras=[r'CUST-\\d+'])
-        >>> # Also processes custom customer ID pattern
+        With extra patterns and safe values:
+        >>> grepper = JSONGrepper(
+        ...     extras=[r'CUST-\\d+'],
+        ...     safe_values=['admin@company.com']
+        ... )
+        >>> # Also processes custom customer ID pattern, but preserves admin email
 
         Large dataset processing:
         >>> large_data = [{"user": user_data} for _ in range(10000)]
@@ -74,11 +79,8 @@ class JSONGrepper:
 
     def __init__(self, **kwargs: Unpack[Settings]) -> None:
         self.__pattern_manager: PatternManager = PatternManager(**kwargs)
-        self.__allowed: list[str] = kwargs.get('allowed', [])  # type: ignore
 
     def grep_and_replace(self, item: Any) -> Any:
         json_item: str = msgspec.json.encode(item).decode('utf-8')
-        for key, pattern in self.__pattern_manager.all:
-            if key not in self.__allowed:
-                json_item = self.__pattern_manager.replace_pattern(key, pattern, json_item)
+        json_item = self.__pattern_manager.search_and_replace(json_item)
         return msgspec.json.decode(json_item)

@@ -30,7 +30,7 @@ class TestDataWalker(unittest.TestCase):
 
     def test_init_with_custom_settings(self) -> None:
         """Test DataWalker initialization with custom settings."""
-        def callback(pattern_key, replacement, item, key, breadcrumbs):
+        def callback(pattern_key, pattern_value, replacement, item):
             return "REDACTED"
 
         walker = DataWalker(  # type: ignore
@@ -134,7 +134,7 @@ class TestDataWalker(unittest.TestCase):
         """Test PII replacement using custom callback function."""
         test_data = copy.deepcopy(SAMPLE_USERS[0])
 
-        def custom_callback(pattern_key, replacement, item, key, breadcrumbs):
+        def custom_callback(pattern_key, pattern_value, replacement, item):
             return f"CUSTOM_REDACTED_{pattern_key}"
 
         walker = DataWalker(callback=custom_callback)  # type: ignore
@@ -372,8 +372,8 @@ class TestDataWalker(unittest.TestCase):
         test_data = {"email": "test@example.com", "nested": {"phone": "555-1234"}}
         callback_calls = []
 
-        def tracking_callback(pattern_key, replacement, item, key, breadcrumbs):
-            callback_calls.append((pattern_key, replacement, item, key, breadcrumbs))
+        def tracking_callback(pattern_key, pattern_value, replacement, item):
+            callback_calls.append((pattern_key, pattern_value, replacement, item))
             return "CALLBACK_REPLACED"
 
         walker = DataWalker(callback=tracking_callback)  # type: ignore
@@ -383,11 +383,10 @@ class TestDataWalker(unittest.TestCase):
         self.assertGreater(len(callback_calls), 0)
 
         # Check parameter types
-        for pattern_key, replacement, item, key, breadcrumbs in callback_calls:
-            self.assertTrue(isinstance(item, (dict, list)))
-            self.assertTrue(isinstance(key, (str, int)))
+        for pattern_key, pattern_value, replacement, item in callback_calls:
+            self.assertTrue(isinstance(pattern_value, (str, type(None))))
             self.assertTrue(isinstance(pattern_key, (str, type(None))))
-            self.assertIsInstance(breadcrumbs, list)
+            self.assertTrue(isinstance(replacement, str))
 
     def test_walk_and_replace_nested_lists(self) -> None:
         """Test PII replacement in nested list structures."""
@@ -441,15 +440,15 @@ class TestDataWalker(unittest.TestCase):
             "contact_list": ["john@example.com", "555-123-4567", "normal text"]
         }
 
-        def list_callback(pattern_key, replacement, item, key, breadcrumbs):
-            return f"LIST_CALLBACK_{pattern_key}_{key}"
+        def list_callback(pattern_key, pattern_value, replacement, item):
+            return f"LIST_CALLBACK_{pattern_key}_{replacement}"
 
         walker = DataWalker(callback=list_callback)  # type: ignore
         result = walker.walk_and_replace(test_data)
 
         # Callback should be used for list items with PII
-        self.assertEqual(result["contact_list"][0], "LIST_CALLBACK_email_0")  # type: ignore
-        self.assertEqual(result["contact_list"][1], "LIST_CALLBACK_phone_1")  # type: ignore
+        self.assertEqual(result["contact_list"][0], "LIST_CALLBACK_email_*")  # type: ignore
+        self.assertEqual(result["contact_list"][1], "LIST_CALLBACK_phone_*")  # type: ignore
         # Non-PII should remain unchanged
         self.assertEqual(result["contact_list"][2], "normal text")  # type: ignore
 

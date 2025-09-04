@@ -5,157 +5,157 @@ from doubletake.searcher.string_replacer import StringReplacer
 
 class TestStringReplacer(unittest.TestCase):
 
-    # Tests for receive_and_replace method through public interface
+    # Tests for scan_and_replace method through public interface
     def test_replace_string_value_with_email(self) -> None:
-        """Test receive_and_replace with email string."""
+        """Test scan_and_replace with email string."""
         test_email = "user@example.com"
 
         replacer = StringReplacer()
-        result = replacer.receive_and_replace(test_email)
+        result = replacer.scan_and_replace(test_email)
 
         # Should return a replaced string (different from original)
         self.assertIsInstance(result, str)
         self.assertNotEqual(result, test_email)
 
     def test_replace_string_value_with_phone(self) -> None:
-        """Test receive_and_replace with phone number string."""
+        """Test scan_and_replace with phone number string."""
         test_phone = "555-123-4567"
 
         replacer = StringReplacer()
-        result = replacer.receive_and_replace(test_phone)
+        result = replacer.scan_and_replace(test_phone)
 
         # Should return a replaced string
         self.assertIsInstance(result, str)
         self.assertNotEqual(result, test_phone)
 
     def test_replace_string_value_with_ssn(self) -> None:
-        """Test receive_and_replace with SSN string."""
+        """Test scan_and_replace with SSN string."""
         test_ssn = "123-45-6789"
 
         replacer = StringReplacer()
-        result = replacer.receive_and_replace(test_ssn)
+        result = replacer.scan_and_replace(test_ssn)
 
         # Should return a replaced string
         self.assertIsInstance(result, str)
         self.assertNotEqual(result, test_ssn)
 
     def test_replace_string_value_with_credit_card(self) -> None:
-        """Test receive_and_replace with credit card number."""
+        """Test scan_and_replace with credit card number."""
         test_cc = "4532-1234-5678-9012"
 
         replacer = StringReplacer()
-        result = replacer.receive_and_replace(test_cc)
+        result = replacer.scan_and_replace(test_cc)
 
         # Should return a replaced string
         self.assertIsInstance(result, str)
         self.assertNotEqual(result, test_cc)
 
     def test_replace_string_value_with_no_pii(self) -> None:
-        """Test receive_and_replace with string containing no PII."""
+        """Test scan_and_replace with string containing no PII."""
         test_string = "just a normal string with no sensitive data"
 
         replacer = StringReplacer()
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should return the original string unchanged
         self.assertEqual(result, test_string)
 
     def test_replace_string_value_with_extra_patterns(self) -> None:
-        """Test receive_and_replace with extra regex patterns."""
+        """Test scan_and_replace with extra regex patterns."""
         test_string = "USER123456"
 
         # Add extra pattern to match USER followed by digits
         replacer = StringReplacer(extras=[r'USER\d+'])  # type: ignore
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should return a replaced string due to extra pattern
         self.assertIsInstance(result, str)
         self.assertNotEqual(result, test_string)
 
     def test_replace_string_value_with_multiple_patterns(self) -> None:
-        """Test receive_and_replace with string containing multiple PII patterns."""
+        """Test scan_and_replace with string containing multiple PII patterns."""
         test_string = "Contact: john@example.com or call 555-123-4567"
 
         replacer = StringReplacer()
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should return a replaced string (first match should trigger replacement)
         self.assertIsInstance(result, str)
         self.assertNotEqual(result, test_string)
 
     def test_replace_string_value_with_allowed_patterns(self) -> None:
-        """Test receive_and_replace respects allowed patterns."""
+        """Test scan_and_replace respects allowed patterns."""
         test_email = "user@example.com"
 
         # Create replacer with email in allowed list
         replacer = StringReplacer(allowed=['email'])  # type: ignore
-        result = replacer.receive_and_replace(test_email)
+        result = replacer.scan_and_replace(test_email)
 
         # Email should remain unchanged (in allowed list)
         self.assertEqual(result, test_email)
 
     def test_replace_string_value_empty_string(self) -> None:
-        """Test receive_and_replace with empty string."""
+        """Test scan_and_replace with empty string."""
         test_string = ""
 
         replacer = StringReplacer()
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should return empty string unchanged
         self.assertEqual(result, "")
 
     def test_replace_string_value_whitespace_only(self) -> None:
-        """Test receive_and_replace with whitespace-only string."""
+        """Test scan_and_replace with whitespace-only string."""
         test_string = "   \t\n   "
 
         replacer = StringReplacer()
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should return whitespace string unchanged (no PII patterns)
         self.assertEqual(result, test_string)
 
     def test_replace_string_value_uses_data_faker(self) -> None:
-        """Test receive_and_replace uses DataFaker for replacements."""
+        """Test scan_and_replace uses DataFaker for replacements."""
         test_email = "test@example.com"
 
         replacer = StringReplacer(use_faker=True)  # type: ignore
-        result = replacer.receive_and_replace(test_email)
+        result = replacer.scan_and_replace(test_email)
 
         # DataFaker should have been called
         # Result should be the fake data
         self.assertNotEqual(result, test_email)
 
     def test_replace_string_value_with_mixed_case_pii(self) -> None:
-        """Test receive_and_replace handles mixed case PII patterns."""
+        """Test scan_and_replace handles mixed case PII patterns."""
         test_email = "User@EXAMPLE.COM"
 
         replacer = StringReplacer()
-        result = replacer.receive_and_replace(test_email)
+        result = replacer.scan_and_replace(test_email)
 
         # Should handle case-insensitive matching and replace
         self.assertIsInstance(result, str)
         self.assertNotEqual(result, test_email)
 
     def test_replace_string_value_with_extra_pattern_only(self) -> None:
-        """Test receive_and_replace with string that only matches extra patterns."""
+        """Test scan_and_replace with string that only matches extra patterns."""
         test_string = "CUSTOM-ID-98765"
 
         # Add extra pattern that doesn't match standard PII
         replacer = StringReplacer(extras=[r'CUSTOM-ID-\d+'])  # type: ignore
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should be replaced due to extra pattern
         self.assertIsInstance(result, str)
         self.assertNotEqual(result, test_string)
 
     def test_replace_string_value_processes_known_patterns_first(self) -> None:
-        """Test that receive_and_replace processes known patterns before extra patterns."""
+        """Test that scan_and_replace processes known patterns before extra patterns."""
         # Use an email that would match both known email pattern and a custom extra pattern
         test_string = "admin@company.com"
 
         # Create a replacer with an extra pattern that would also match
         replacer = StringReplacer(extras=[r'admin@.*'])  # type: ignore
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should be replaced (either by known email pattern or a custom extra pattern)
         self.assertIsInstance(result, str)
@@ -167,7 +167,7 @@ class TestStringReplacer(unittest.TestCase):
         test_email = "user@example.com"
 
         replacer = StringReplacer(maintain_length=False)  # type: ignore
-        result = replacer.receive_and_replace(test_email)
+        result = replacer.scan_and_replace(test_email)
 
         # Should replace with default '*' character (not length-preserving)
         self.assertIsInstance(result, str)
@@ -180,7 +180,7 @@ class TestStringReplacer(unittest.TestCase):
         test_email = "user@example.com"
 
         replacer = StringReplacer(maintain_length=True)  # type: ignore
-        result = replacer.receive_and_replace(test_email)
+        result = replacer.scan_and_replace(test_email)
 
         # Should replace with asterisks matching original length
         self.assertIsInstance(result, str)
@@ -194,7 +194,7 @@ class TestStringReplacer(unittest.TestCase):
         test_phone = "555-123-4567"
 
         replacer = StringReplacer(replace_with='X', maintain_length=True)  # type: ignore
-        result = replacer.receive_and_replace(test_phone)
+        result = replacer.scan_and_replace(test_phone)
 
         # Should replace with custom character
         self.assertIsInstance(result, str)
@@ -208,7 +208,7 @@ class TestStringReplacer(unittest.TestCase):
         test_ssn = "123-45-6789"
 
         replacer = StringReplacer(replace_with='REDACTED', maintain_length=False)  # type: ignore
-        result = replacer.receive_and_replace(test_ssn)
+        result = replacer.scan_and_replace(test_ssn)
 
         # Should replace with custom string
         self.assertIsInstance(result, str)
@@ -220,7 +220,7 @@ class TestStringReplacer(unittest.TestCase):
         test_email = "user@example.com"
 
         replacer = StringReplacer(use_faker=True)  # type: ignore
-        result = replacer.receive_and_replace(test_email)
+        result = replacer.scan_and_replace(test_email)
 
         # Should return a different email-like string (fake data)
         self.assertIsInstance(result, str)
@@ -235,7 +235,7 @@ class TestStringReplacer(unittest.TestCase):
         test_phone = "555-123-4567"
 
         replacer = StringReplacer(use_faker=True)  # type: ignore
-        result = replacer.receive_and_replace(test_phone)
+        result = replacer.scan_and_replace(test_phone)
 
         # Should return a different phone-like string
         self.assertIsInstance(result, str)
@@ -249,7 +249,7 @@ class TestStringReplacer(unittest.TestCase):
         test_string = "Email: user@example.com and backup: admin@example.org"
 
         replacer = StringReplacer(maintain_length=False)  # type: ignore
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should replace all email occurrences due to count=0 in re.sub
         self.assertIsInstance(result, str)
@@ -262,7 +262,7 @@ class TestStringReplacer(unittest.TestCase):
         test_email = "USER@EXAMPLE.COM"
 
         replacer = StringReplacer(maintain_length=True)  # type: ignore
-        result = replacer.receive_and_replace(test_email)
+        result = replacer.scan_and_replace(test_email)
 
         # Should match and replace despite uppercase
         self.assertIsInstance(result, str)
@@ -276,7 +276,7 @@ class TestStringReplacer(unittest.TestCase):
 
         # Extra patterns get numeric indices as keys
         replacer = StringReplacer(extras=[r'INVOICE-\d+'])  # type: ignore
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should be replaced by extra pattern
         self.assertIsInstance(result, str)
@@ -292,7 +292,7 @@ class TestStringReplacer(unittest.TestCase):
             extras=[r'support@.*'],  # type: ignore
             maintain_length=False
         )
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should be replaced (by either pattern)
         self.assertIsInstance(result, str)
@@ -305,7 +305,7 @@ class TestStringReplacer(unittest.TestCase):
 
         # Allow phone pattern but not email
         replacer = StringReplacer(allowed=['phone'])  # type: ignore
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Phone should be preserved, email should be replaced
         self.assertIsInstance(result, str)
@@ -322,7 +322,7 @@ class TestStringReplacer(unittest.TestCase):
 
         # Allow all standard pattern types
         replacer = StringReplacer(allowed=['email', 'phone', 'ssn', 'credit_card', 'ip_address', 'url'])  # type: ignore
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Nothing should be replaced
         self.assertEqual(result, test_string)
@@ -336,7 +336,7 @@ class TestStringReplacer(unittest.TestCase):
             extras=[r'CUSTOM-ID-\d+'],  # type: ignore
             allowed=['0']  # Try to allow the first extra pattern (numeric key 0)
         )
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Extra pattern should still be processed (numeric key 0 vs string key '0')
         self.assertIsInstance(result, str)
@@ -350,7 +350,7 @@ class TestStringReplacer(unittest.TestCase):
 
         for test_input in test_inputs:
             with self.subTest(input_type=type(test_input).__name__):
-                result = replacer.receive_and_replace(test_input)  # type: ignore
+                result = replacer.scan_and_replace(test_input)  # type: ignore
                 self.assertIsNone(result)
 
     def test_replace_string_value_maintains_regex_flags(self) -> None:
@@ -358,7 +358,7 @@ class TestStringReplacer(unittest.TestCase):
         test_email = "User@EXAMPLE.com"
 
         replacer = StringReplacer(maintain_length=False)  # type: ignore
-        result = replacer.receive_and_replace(test_email)
+        result = replacer.scan_and_replace(test_email)
 
         # Should match and replace with case-insensitive flag
         self.assertIsInstance(result, str)
@@ -370,7 +370,7 @@ class TestStringReplacer(unittest.TestCase):
         test_ssn = "123-45-6789"
 
         replacer = StringReplacer(use_faker=True)  # type: ignore
-        result = replacer.receive_and_replace(test_ssn)
+        result = replacer.scan_and_replace(test_ssn)
 
         # DataFaker should be called with 'ssn' as the pattern key
         self.assertNotEqual(result, test_ssn)
@@ -383,7 +383,7 @@ class TestStringReplacer(unittest.TestCase):
             use_faker=True,  # type: ignore
             extras=[r'CUSTOM-\d+']  # type: ignore
         )
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # DataFaker should be called with numeric key (0 for first extra pattern)
         self.assertNotEqual(result, test_string)
@@ -393,7 +393,7 @@ class TestStringReplacer(unittest.TestCase):
         test_string = "User info: john.doe@company.com, (555) 123-4567, SSN: 123-45-6789"
 
         replacer = StringReplacer(maintain_length=False)  # type: ignore
-        result = replacer.receive_and_replace(test_string)
+        result = replacer.scan_and_replace(test_string)
 
         # Should replace the first matching pattern found
         self.assertIsInstance(result, str)
@@ -407,7 +407,7 @@ class TestStringReplacer(unittest.TestCase):
         test_url = "Visit https://example.com/path?param=value"
 
         replacer = StringReplacer(maintain_length=False)  # type: ignore
-        result = replacer.receive_and_replace(test_url)
+        result = replacer.scan_and_replace(test_url)
 
         # URL should be detected and replaced
         self.assertIsInstance(result, str)
@@ -419,7 +419,7 @@ class TestStringReplacer(unittest.TestCase):
         test_ip = "Server IP: 192.168.1.100"
 
         replacer = StringReplacer(maintain_length=False)  # type: ignore
-        result = replacer.receive_and_replace(test_ip)
+        result = replacer.scan_and_replace(test_ip)
 
         # IP address should be detected and replaced
         self.assertIsInstance(result, str)
@@ -431,7 +431,7 @@ class TestStringReplacer(unittest.TestCase):
         test_cc = "Card: 4532 1234 5678 9012"
 
         replacer = StringReplacer(maintain_length=False)  # type: ignore
-        result = replacer.receive_and_replace(test_cc)
+        result = replacer.scan_and_replace(test_cc)
 
         # Credit card should be detected and replaced
         self.assertIsInstance(result, str)
@@ -446,7 +446,7 @@ class TestStringReplacer(unittest.TestCase):
         )
 
         replacer = StringReplacer(maintain_length=False)  # type: ignore
-        result = replacer.receive_and_replace(test_text)
+        result = replacer.scan_and_replace(test_text)
 
         # Should replace first match (email)
         self.assertIsInstance(result, str)

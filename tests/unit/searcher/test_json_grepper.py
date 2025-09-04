@@ -302,16 +302,21 @@ class TestJSONGrepper(unittest.TestCase):
         mock_pattern_manager.patterns = {'email': r'[\w\.-]+@[\w\.-]+\.\w+'}
         mock_pattern_manager.extras = []
         mock_pattern_manager.all = list(mock_pattern_manager.patterns.items())
-        mock_pattern_manager.replace_pattern.return_value = '"REPLACED"'
+        # Return a modified JSON string (not bytes)
+        mock_pattern_manager.search_and_replace.return_value = '{"email": "REPLACED"}'
         mock_pattern_manager_class.return_value = mock_pattern_manager
 
         test_data = {"email": "test@example.com"}
 
         grepper = JSONGrepper()
-        _ = grepper.grep_and_replace(test_data)
+        result = grepper.grep_and_replace(test_data)
 
-        # PatternManager should have been used
-        mock_pattern_manager.replace_pattern.assert_called()
+        # PatternManager.search_and_replace should have been called
+        mock_pattern_manager.search_and_replace.assert_called_once()
+
+        # Verify the result is properly decoded
+        self.assertIsInstance(result, dict)
+        self.assertEqual(result["email"], "REPLACED")
 
     def test_grep_and_replace_handles_json_serialization(self) -> None:
         """Test that JSONGrepper properly handles JSON serialization/deserialization."""

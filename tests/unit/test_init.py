@@ -152,7 +152,7 @@ class TestDoubleTake(unittest.TestCase):
 
     def test_mask_data_with_callback_function(self) -> None:
         """Test masking using a custom callback function."""
-        def custom_masker(pattern_key: str, replacement: str, item: Any, key: str, breadcrumbs: List[str]) -> str:
+        def custom_masker(pattern_key, pattern_value, replacement, item) -> str:
             return f"[CUSTOM_MASKED_{pattern_key.upper() if pattern_key else 'UNKNOWN'}]"
 
         db = DoubleTake(
@@ -279,7 +279,7 @@ class TestDoubleTake(unittest.TestCase):
 
     def test_process_data_item_with_callback_and_faker(self) -> None:
         """Test the private method behavior with both callback and faker enabled."""
-        def test_callback(pattern_key: str, replacement: str, item: Any, key: str, breadcrumbs: List[str]) -> str:
+        def test_callback(pattern_key, pattern_value, replacement, item) -> str:
             return "[CALLBACK_MASKED]"
 
         db = DoubleTake(use_faker=True, callback=test_callback)
@@ -353,7 +353,6 @@ class TestDoubleTake(unittest.TestCase):
 
         test_data = ALLOWED_USER_EMAILS.copy()
         result = db.mask_data(test_data)
-
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), len(test_data))
         self.assertEqual(result[0]['details']['email'], ALLOWED_USER_EMAILS[0]['details']['email'])

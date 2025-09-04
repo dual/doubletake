@@ -26,7 +26,7 @@ pytest-html = "*"
 pytest-cov = "*"
 
 [scripts]
-qt = "python -m unittest tests/unit/test_init.py"
+qt = "python -m unittest tests.unit.test_init.TestDoubleTake.test_mask_data_with_allowed_user_emails_with_faker"
 lint = "pylint --fail-under 10 doubletake"
 test = "python -m unittest discover"
 coverage = "coverage run --source doubletake -m pytest tests/unit --cov=doubletake --junitxml ./coverage/reports/junit.xml --cov-report xml:./coverage/reports/cov.xml --html=./coverage/reports/index.html --self-contained-html --cov-report html:./coverage/pretty -p no:warnings -o log_cli=true"

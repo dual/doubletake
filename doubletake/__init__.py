@@ -25,6 +25,7 @@ class DoubleTake:
         __callback (Optional[Callable]): Custom callback function for PII replacement
         __json_grepper (JSONGrepper): Handler for JSON-based PII replacement
         __data_walker (DataWalker): Handler for dictionary traversal and replacement
+        __string_replacer (StringReplacer): Handler for string-only PII replacement
 
     Example:
         Basic usage with default settings:
@@ -42,10 +43,13 @@ class DoubleTake:
         >>> db = DoubleTake(callback=custom_replacer)
         >>> masked = db.mask_data(data)
 
-        With custom patterns:
+        With custom patterns and safe values:
         >>> db = DoubleTake(
-        ...     allowed=['name'],  # Don't replace names
-        ...     extras=[r'CUST-\\d+']  # Custom pattern for customer IDs
+        ...     allowed=['email'],  # Don't replace emails
+        ...     extras=[r'CUST-\\d+'],  # Custom pattern for customer IDs
+        ...     safe_values=['admin@company.com', 'N/A'],  # Values to skip replacement
+        ...     known_paths=['user.email'],  # Replace email at this path
+        ...     idempotent=True  # Consistent replacements across calls
         ... )
     """
 
@@ -61,6 +65,10 @@ class DoubleTake:
                 - allowed (list[str]): Pattern keys to exclude from replacement
                 - extras (list[str]): Additional regex patterns to detect as PII
                 - known_paths (list[str]): Specific data paths to always replace
+                - safe_values (list[str]): Values that should never be replaced
+                - idempotent (bool): Ensure consistent replacements across calls
+                - maintain_length (bool): Preserve original string length in replacements
+                - replace_with (str): Character or string to use for masking
 
         Raises:
             ValueError: If configuration validation fails
@@ -108,5 +116,5 @@ class DoubleTake:
         if not self.__use_faker and self.__callback is None:
             return self.__json_grepper.grep_and_replace(item)
         if isinstance(item, str):
-            return self.__string_replacer.receive_and_replace(item)
+            return self.__string_replacer.scan_and_replace(item)
         return self.__data_walker.walk_and_replace(item)

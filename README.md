@@ -9,7 +9,6 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=bugs)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
 [![pypi package](https://img.shields.io/pypi/v/doubletake?color=%2334D058&label=pypi%20package)](https://pypi.org/project/doubletake/)
-[![python](https://img.shields.io/pypi/pyversions/doubletake.svg?color=%2334D058)](https://pypi.org/project/doubletake)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dual/doubletake/issues)
 
 doubletake is a powerful, flexible library for automatically detecting and replacing Personally Identifiable Information (PII) in your data structures. Whether you're anonymizing datasets for testing, protecting sensitive information in logs, or ensuring GDPR compliance, doubletake makes it effortless.
@@ -24,6 +23,8 @@ doubletake is a powerful, flexible library for automatically detecting and repla
 - **⚡ Zero Dependencies**: Lightweight with minimal external requirements
 - **🛡️ Type Safe**: Full TypeScript-style type hints for better development experience
 - **📋 Path Targeting**: Precisely target specific data paths for replacement
+- **🔒 Safe Values**: Protect specific values from being replaced
+- **🔄 Idempotent Operations**: Safely re-process data without double-masking and keep data relationships intact after masking
 
 ## 🎯 Why doubletake?
 
@@ -107,13 +108,13 @@ masked_data = db.mask_data(data)
 ### Custom Replacement Logic
 
 ```python
-def custom_replacer(pattern_key: str, replacement: str, item: Any, key: str, breadcrumbs: List[str]):
+def custom_replacer(pattern_key: str, pattern_value: str, possible_replacement: str, value: Any):
     """Custom replacement with full context"""
     if pattern_key == 'email':
         return "***REDACTED_EMAIL***"
     if pattern_key == 'ssn':
         return "XXX-XX-XXXX"
-    if 'secret' in item[key]:
+    if 'secret' in value:
         return "***CLASSIFIED***"
     return replacement
 
@@ -143,9 +144,81 @@ db = DoubleTake(
 )
 ```
 
+### Safe Values Protection
+
+```python
+# Protect specific values from being replaced
+db = DoubleTake(
+    safe_values=[
+        'admin@company.com',        # Corporate email to keep
+        'support@company.com',      # Support contact
+        '555-000-0000',            # Test phone number
+        'N/A'                      # Placeholder values
+    ]
+)
+
+# These values will never be replaced, even if they match PII patterns
+data = {
+    "primary_email": "admin@company.com",     # ← Stays unchanged
+    "user_email": "user@personal.com",       # ← Gets replaced
+    "phone": "555-000-0000",                 # ← Stays unchanged
+    "mobile": "555-123-4567"                 # ← Gets replaced
+}
+```
+
+### Idempotent Processing
+
+```python
+# Safely re-process data without double-masking
+db = DoubleTake(
+    idempotent=True,           # Prevents replacing already masked data
+    replace_with='*'           # Use consistent masking character
+)
+
+# First processing
+data = {"email": "user@domain.com"}
+masked_once = db.mask_data([data])
+# Result: {"email": "****@******.***"}
+
+# Second processing (safe!)
+masked_twice = db.mask_data(masked_once)  
+# Result: {"email": "****@******.***"}  ← Same result, no double-masking
+```
+
+> **💡 Data Consistency with Faker**: When using `idempotent=True` with `use_faker=True`, the same original value will always generate the same fake replacement across your entire dataset. This ensures data relationships remain intact after masking.
+
+```python
+# Consistent faker replacements across multiple datasets
+db = DoubleTake(use_faker=True, idempotent=True)
+
+# User profile data
+profile_data = {
+    "user_id": 12345,
+    "email": "john.doe@company.com", 
+    "department": "Engineering"
+}
+
+# Notification log data  
+notification_data = {
+    "timestamp": "2023-10-15",
+    "recipient": "john.doe@company.com",  # Same email as profile
+    "message": "Welcome to the team!"
+}
+
+# Both datasets masked separately
+masked_profile = db.mask_data([profile_data])[0]
+masked_notifications = db.mask_data([notification_data])[0] 
+
+print(masked_profile["email"])        # sarah.johnson@example.net
+print(masked_notifications["recipient"])  # sarah.johnson@example.net ← Same fake email!
+
+# Data relationships preserved - you can still join/correlate the datasets
+assert masked_profile["email"] == masked_notifications["recipient"]  # ✅ True
+```
+
 ## 🏗️ Architecture
 
-doubletake offers two complementary processing strategies:
+doubletake offers three complementary processing strategies:
 
 ### 🚀 JSONGrepper (High Performance)
 
@@ -168,9 +241,9 @@ db = DoubleTake()  # Uses JSONGrepper internally
 - **Trade-offs**: No deep traversal, limited to string-to-string operations
 
 ```python
-# Used for basic string replacement scenarios
+# Automatically chosen when using advanced features
 db = DoubleTake(use_faker=True)  # Uses StringReplacer for simple string input
-db = DoubleTake(replace_wit='x')  # Uses StringReplacer for simple string input
+
 # example simple string input
 # ['some log with your phone: 111-333-444', 'some log with your ssn: 123-456-7890']
 ```
@@ -207,6 +280,8 @@ db = DoubleTake(
     callback=None,             # Custom replacement function
     allowed=[],                # Pattern types to skip
     extras=[],                 # Additional regex patterns  
+    safe_values=[],            # Values to protect from replacement
+    idempotent=False,          # Prevent double-masking operations
     known_paths=[],            # Specific paths to target
     replace_with='*',          # Character for replacements
     maintain_length=False      # Preserve original string length
@@ -272,17 +347,83 @@ db = DoubleTake(known_paths=['database.admin_email', 'api_keys.support_email'])
 sanitized_config = db.mask_data([config])[0]
 ```
 
-### Log Sanitization
+### Log Sanitization with Safe Values
 
 ```python
-# Remove secrets from config files
+# Sanitize logs while preserving important contact info
 logs = [
     "Please contact our support team at support@company.com or call +1-555-SUPPORT",
-    "Your SSN 123-45-6789 has been verified. Email confirmation sent to user@domain.com",
+    "User john.doe@personal.com reported an issue. Forward to support@company.com",
+    "Error: Invalid email user@badactor.com blocked by system"
 ]
 
-db = DoubleTake()
-sanitized_logs = db.mask_data([logs])
+db = DoubleTake(
+    safe_values=['support@company.com'],  # Keep official support email visible
+    extras=[r'\+1-555-SUPPORT']          # Keep support phone pattern
+)
+
+sanitized_logs = db.mask_data(logs)
+# Result preserves support contacts but masks personal info
+```
+
+### Multi-Environment Data Processing
+
+```python
+# Different masking strategies for different environments
+def create_masker_for_env(environment: str):
+    if environment == 'production':
+        # Strictest masking for production logs
+        return DoubleTake(
+            idempotent=True,           # Safe re-processing
+            safe_values=[],            # No exceptions
+            allowed=[]                 # Mask everything
+        )
+    
+    elif environment == 'staging': 
+        # Moderate masking, keep some test data
+        return DoubleTake(
+            safe_values=[
+                'test@company.com',
+                'staging@company.com', 
+                '555-000-0000'
+            ],
+            idempotent=True
+        )
+    
+    else:  # development
+        # Minimal masking for debugging
+        return DoubleTake(
+            allowed=['email'],         # Keep emails for debugging
+            safe_values=['dev@company.com'],
+            idempotent=True
+        )
+
+# Usage
+prod_masker = create_masker_for_env('production')
+staging_masker = create_masker_for_env('staging')
+dev_masker = create_masker_for_env('development')
+```
+
+### Batch Processing with Consistency
+
+```python
+# Process large datasets consistently across multiple runs
+data_batches = [
+    [{"user": "alice@corp.com", "id": 1}],
+    [{"user": "bob@corp.com", "id": 2}],
+    [{"user": "alice@corp.com", "id": 3}]  # Same email appears again
+]
+
+db = DoubleTake(
+    use_faker=True,           # Consistent fake data
+    idempotent=True,          # Safe for re-processing
+    safe_values=['alice@corp.com']  # Keep specific user visible
+)
+
+# Process each batch - alice@corp.com stays consistent
+for batch in data_batches:
+    processed = db.mask_data(batch)
+    print(processed)
 ```
 
 ## 🔬 Performance & Testing
@@ -300,6 +441,7 @@ pipenv run pytest --cov=doubletake tests/
 **Performance Benchmarks** (10,000 records):
 
 - JSONGrepper: ~0.1s (simple patterns)
+- StringReplacer: ~0.2s (with fake data generation)
 - DataWalker: ~0.3s (with fake data generation)
 
 ## 🤝 Contributing

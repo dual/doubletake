@@ -106,11 +106,12 @@ class DoubleTake:
             >>> result = db.mask_data(data)
             >>> # Emails and phone numbers will be replaced, names and IDs preserved
         """
+        process_data = data if isinstance(data, list) else [data]
         return_data: list[Any] = []
-        for item in data:
+        for item in process_data:
             masked_item = self.__process_data_item(item)
             return_data.append(masked_item)
-        return return_data
+        return return_data if isinstance(data, list) else return_data[0]
 
     def __process_data_item(self, item: Any) -> Any:
         if not self.__use_faker and self.__callback is None:

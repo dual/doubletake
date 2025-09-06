@@ -5,6 +5,7 @@ import msgspec
 
 from doubletake.utils.pattern_manager import PatternManager
 from doubletake.types.settings import Settings
+from doubletake.utils.meta_match import MetaMatch
 
 
 class JSONGrepper:
@@ -78,6 +79,7 @@ class JSONGrepper:
     """
 
     def __init__(self, **kwargs: Unpack[Settings]) -> None:
+        kwargs['meta_match'] = MetaMatch()
         self.__pattern_manager: PatternManager = PatternManager(**kwargs)
 
     def grep_and_replace(self, item: Any) -> Any:

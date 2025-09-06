@@ -4,7 +4,6 @@ Tests the core functionality of data masking using various test scenarios.
 """
 import unittest
 from unittest.mock import patch, MagicMock
-from typing import Any, List
 
 from doubletake import DoubleTake
 from tests.mocks.test_data import (
@@ -42,7 +41,7 @@ class TestDoubleTake(unittest.TestCase):
 
     def test_init_with_callback(self) -> None:
         """Test doubletake initialization with callback function."""
-        def custom_callback(pattern_key: str, replacement: str, item: Any, key: str, breadcrumbs: List[str]) -> str:
+        def custom_callback(meta_match, faker, item):
             return "[REDACTED]"
 
         db = DoubleTake(
@@ -152,8 +151,8 @@ class TestDoubleTake(unittest.TestCase):
 
     def test_mask_data_with_callback_function(self) -> None:
         """Test masking using a custom callback function."""
-        def custom_masker(pattern_key, pattern_value, replacement, item) -> str:
-            return f"[CUSTOM_MASKED_{pattern_key.upper() if pattern_key else 'UNKNOWN'}]"
+        def custom_masker(meta_match, faker, item) -> str:
+            return f"[CUSTOM_MASKED_{meta_match.pattern.upper()}]"
 
         db = DoubleTake(
             use_faker=True,  # This enables data_walker which uses callbacks
@@ -170,7 +169,7 @@ class TestDoubleTake(unittest.TestCase):
         """Test masking using known paths configuration."""
         db = DoubleTake(
             use_faker=True,
-            known_paths=['user.personal.ssn', 'billing.card_number']
+            known_paths=['user.personal.ssn', 'billing.card_number'],
         )
 
         test_data = [{
@@ -194,7 +193,7 @@ class TestDoubleTake(unittest.TestCase):
         """Test masking with extra custom regex patterns."""
         db = DoubleTake(
             use_faker=True,
-            extras=[r'\b[A-Z]{2,3}-\d{4,6}\b']  # Custom pattern for codes like AB-1234
+            extras={"custom_code": r'\\b[A-Z]{2,3}-\\d{4,6}\\b'}  # Custom pattern for codes like AB-1234
         )
 
         test_data = [{'code': 'ABC-12345', 'description': 'Test item'}]
@@ -279,7 +278,7 @@ class TestDoubleTake(unittest.TestCase):
 
     def test_process_data_item_with_callback_and_faker(self) -> None:
         """Test the private method behavior with both callback and faker enabled."""
-        def test_callback(pattern_key, pattern_value, replacement, item) -> str:
+        def test_callback(meta_match, faker, item) -> str:
             return "[CALLBACK_MASKED]"
 
         db = DoubleTake(use_faker=True, callback=test_callback)
@@ -332,7 +331,7 @@ class TestDoubleTake(unittest.TestCase):
         db = DoubleTake(
             replace_with='*',
             allowed=['email'],
-            extras=[r'^(?!allowed\.user@example\.net$)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$']
+            extras={"custom_email": r'^(?!allowed\\.user@example\\.net$)[A-ZaZ0-9._%+-]+@[A-ZaZ0-9.-]+\\.[A-ZaZ]{2,}$'}
         )
 
         test_data = ALLOWED_USER_EMAILS.copy()
@@ -348,7 +347,7 @@ class TestDoubleTake(unittest.TestCase):
         db = DoubleTake(
             use_faker=True,
             allowed=['email'],
-            extras=[r'^(?!allowed\.user@example\.net$)[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$']
+            extras={"custom_email": r'^(?!allowed\\.user@example\\.net$)[A-ZaZ0-9._%+-]+@[A-ZaZ0-9.-]+\\.[A-ZaZ]{2,}$'}
         )
 
         test_data = ALLOWED_USER_EMAILS.copy()
@@ -357,3 +356,81 @@ class TestDoubleTake(unittest.TestCase):
         self.assertEqual(len(result), len(test_data))
         self.assertEqual(result[0]['details']['email'], ALLOWED_USER_EMAILS[0]['details']['email'])
         self.assertNotEqual(result[1]['details']['email'], ALLOWED_USER_EMAILS[0]['details']['email'])
+
+    def test_mask_data_with_extras_address_pattern_uses_faker_address(self) -> None:
+        """Test masking with extras pattern for addresses that dynamically uses faker.address()."""
+        # Create DoubleTake with faker enabled and custom address pattern
+        db = DoubleTake(
+            use_faker=True,
+            extras={"address": r'\b\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr)\b'}
+        )
+
+        # Test data with addresses matching the pattern
+        test_data = [
+            {
+                'customer_id': 'CUST-001',
+                'home_address': '123 Main Street',
+                'work_address': '456 Oak Avenue',
+                'description': 'Customer lives at a nice location'
+            },
+            {
+                'shipping_address': '789 Pine Road',
+                'billing_address': '321 Elm Boulevard',
+                'notes': 'Delivery instructions for the property'
+            }
+        ]
+
+        result = db.mask_data(test_data.copy())
+
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2)
+
+        # Verify that original addresses are replaced
+        first_customer = result[0]
+        second_customer = result[1]
+
+        # Original addresses should be replaced
+        self.assertNotEqual(first_customer['home_address'], '123 Main Street')
+        self.assertNotEqual(first_customer['work_address'], '456 Oak Avenue')
+        self.assertNotEqual(second_customer['shipping_address'], '789 Pine Road')
+        self.assertNotEqual(second_customer['billing_address'], '321 Elm Boulevard')
+
+        # Verify that faker generates realistic addresses (should contain typical address components)
+        for customer in result:
+            for key, value in customer.items():
+                if 'address' in key:
+                    # Faker addresses typically contain numbers and common address words
+                    self.assertIsInstance(value, str)
+                    self.assertTrue(len(value) > 0)
+                    # Check that it looks like an address (contains at least one digit and letter)
+                    has_digit = any(c.isdigit() for c in value)
+                    has_letter = any(c.isalpha() for c in value)
+                    self.assertTrue(has_digit or has_letter, f"Generated address '{value}' doesn't look realistic")
+
+        # Verify non-address fields remain unchanged
+        self.assertEqual(first_customer['customer_id'], 'CUST-001')
+        self.assertEqual(first_customer['description'], 'Customer lives at a nice location')
+        self.assertEqual(second_customer['notes'], 'Delivery instructions for the property')
+
+        # Test that the same address gets the same replacement when idempotent is enabled
+        db_idempotent = DoubleTake(
+            use_faker=True,
+            idempotent=True,
+            extras={"address": r'\b\d+\s+[A-Za-z0-9\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr)\b'}
+        )
+
+        test_duplicate_addresses = [
+            {'addr1': '555 Test Street', 'addr2': '555 Test Street'},
+            {'addr3': '555 Test Street'}
+        ]
+
+        result_idempotent = db_idempotent.mask_data(test_duplicate_addresses.copy())
+
+        # All instances of '555 Test Street' should be replaced with the same fake address
+        addr1_replacement = result_idempotent[0]['addr1']
+        addr2_replacement = result_idempotent[0]['addr2']
+        addr3_replacement = result_idempotent[1]['addr3']
+
+        self.assertEqual(addr1_replacement, addr2_replacement)
+        self.assertEqual(addr2_replacement, addr3_replacement)
+        self.assertNotEqual(addr1_replacement, '555 Test Street')

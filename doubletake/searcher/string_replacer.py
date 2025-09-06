@@ -3,6 +3,7 @@ from typing_extensions import Unpack
 
 from doubletake.utils.pattern_manager import PatternManager
 from doubletake.types.settings import Settings
+from doubletake.utils.meta_match import MetaMatch
 
 
 class StringReplacer:
@@ -71,6 +72,7 @@ class StringReplacer:
     """
 
     def __init__(self, **kwargs: Unpack[Settings]) -> None:
+        kwargs['meta_match'] = MetaMatch()
         self.__pattern_manager: PatternManager = PatternManager(**kwargs)
 
     def scan_and_replace(self, item: str) -> Union[str, None]:

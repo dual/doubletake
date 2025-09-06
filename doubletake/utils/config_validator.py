@@ -101,17 +101,15 @@ class ConfigValidator:
         extras = config.get('extras')
         if extras is None:
             return
-
-        if not isinstance(extras, list):
-            raise ValueError('The "extras" key must be a list of regexstrings if provided.')
-
-        for item in extras:
-            if not isinstance(item, str):
-                raise ValueError('The "extras" key must be a list of regexstrings if provided.')
+        if not isinstance(extras, dict):
+            raise ValueError('The "extras" key must be a dict of {str: regex string} if provided.')
+        for key, value in extras.items():
+            if not isinstance(key, str) or not isinstance(value, str):
+                raise ValueError('Each key and value in "extras" must be a string (key: name, value: regex pattern).')
             try:
-                re.compile(item)
+                re.compile(value)
             except re.error as error:
-                raise ValueError('The "extras" key must be a list of regexstrings if provided.') from error
+                raise ValueError(f'Invalid regex pattern in "extras": {value}') from error
 
     @staticmethod
     def _validate_safe_values(config: Settings) -> None:

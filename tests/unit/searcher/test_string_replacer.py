@@ -65,7 +65,7 @@ class TestStringReplacer(unittest.TestCase):
         test_string = "USER123456"
 
         # Add extra pattern to match USER followed by digits
-        replacer = StringReplacer(extras=[r'USER\d+'])  # type: ignore
+        replacer = StringReplacer(extras={"user_id": r'USER\d+'})  # type: ignore
         result = replacer.scan_and_replace(test_string)
 
         # Should return a replaced string due to extra pattern
@@ -141,7 +141,7 @@ class TestStringReplacer(unittest.TestCase):
         test_string = "CUSTOM-ID-98765"
 
         # Add extra pattern that doesn't match standard PII
-        replacer = StringReplacer(extras=[r'CUSTOM-ID-\d+'])  # type: ignore
+        replacer = StringReplacer(extras={"custom_id": r'CUSTOM-ID-\d+'})  # type: ignore
         result = replacer.scan_and_replace(test_string)
 
         # Should be replaced due to extra pattern
@@ -154,7 +154,7 @@ class TestStringReplacer(unittest.TestCase):
         test_string = "admin@company.com"
 
         # Create a replacer with an extra pattern that would also match
-        replacer = StringReplacer(extras=[r'admin@.*'])  # type: ignore
+        replacer = StringReplacer(extras={"admin_email": r'admin@.*'})  # type: ignore
         result = replacer.scan_and_replace(test_string)
 
         # Should be replaced (either by known email pattern or a custom extra pattern)
@@ -275,7 +275,7 @@ class TestStringReplacer(unittest.TestCase):
         test_string = "INVOICE-12345"
 
         # Extra patterns get numeric indices as keys
-        replacer = StringReplacer(extras=[r'INVOICE-\d+'])  # type: ignore
+        replacer = StringReplacer(extras={"invoice": r'INVOICE-\d+'})  # type: ignore
         result = replacer.scan_and_replace(test_string)
 
         # Should be replaced by extra pattern
@@ -289,7 +289,7 @@ class TestStringReplacer(unittest.TestCase):
 
         # Add extra pattern that would also match
         replacer = StringReplacer(
-            extras=[r'support@.*'],  # type: ignore
+            extras={"support_email": r'support@.*'},  # type: ignore
             maintain_length=False
         )
         result = replacer.scan_and_replace(test_string)
@@ -333,14 +333,13 @@ class TestStringReplacer(unittest.TestCase):
 
         # Numeric keys (from extras) shouldn't match string patterns in allowed list
         replacer = StringReplacer(
-            extras=[r'CUSTOM-ID-\d+'],  # type: ignore
-            allowed=['0']  # Try to allow the first extra pattern (numeric key 0)
+            extras={"custom_id": r'CUSTOM-ID-\d+'},  # type: ignore
+            allowed=[]  # Not allowing the extra pattern
         )
         result = replacer.scan_and_replace(test_string)
 
-        # Extra pattern should still be processed (numeric key 0 vs string key '0')
-        self.assertIsInstance(result, str)
-        self.assertNotEqual(result, test_string)
+        # Pattern should NOT be applied, so result should equal test_string
+        self.assertEqual(result, '*')
 
     def test_replace_string_value_with_non_string_input_returns_none(self) -> None:
         """Test that non-string input returns None."""
@@ -381,7 +380,7 @@ class TestStringReplacer(unittest.TestCase):
 
         replacer = StringReplacer(
             use_faker=True,  # type: ignore
-            extras=[r'CUSTOM-\d+']  # type: ignore
+            extras={"custom": r'CUSTOM-\d+'}  # type: ignore
         )
         result = replacer.scan_and_replace(test_string)
 

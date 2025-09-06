@@ -35,7 +35,7 @@ class TestJSONGrepper(unittest.TestCase):
         """Test JSONGrepper initialization with custom settings."""
         grepper = JSONGrepper(  # type: ignore
             allowed=['email'],
-            extras=[r'\d{3}-\d{2}-\d{4}']
+            extras={"ssn": r'\d{3}-\d{2}-\d{4}'}
         )
         self.assertIsInstance(grepper, JSONGrepper)
 
@@ -131,7 +131,7 @@ class TestJSONGrepper(unittest.TestCase):
         }
 
         # Add extra pattern to match USER followed by digits
-        grepper = JSONGrepper(extras=[r'USER\d+'])  # type: ignore
+        grepper = JSONGrepper(extras={"user_id": r'USER\d+'})  # type: ignore
         result = grepper.grep_and_replace(test_data)
 
         # user_id should be replaced due to extra pattern
@@ -367,7 +367,7 @@ class TestJSONGrepper(unittest.TestCase):
         }
 
         # Create grepper with extra pattern
-        grepper = JSONGrepper(extras=[r'CUST-\d+'])  # type: ignore
+        grepper = JSONGrepper(extras={"custom_id": r'CUST-\d+'})  # type: ignore
         result = grepper.grep_and_replace(test_data)
 
         # Custom pattern should be replaced

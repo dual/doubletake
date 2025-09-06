@@ -108,15 +108,27 @@ masked_data = db.mask_data(data)
 ### Custom Replacement Logic
 
 ```python
-def custom_replacer(pattern_key: str, pattern_value: str, possible_replacement: str, value: Any):
+# The callback receives:
+#   meta_match: MetaMatch (fields: pattern, value, replacement, breadcrumbs)
+#   faker:      Faker instance (for generating fake data)
+#   value:      The matched value being replaced
+
+def custom_replacer(meta_match, faker, value):
     """Custom replacement with full context"""
-    if pattern_key == 'email':
+    # meta_match.pattern: the pattern key (e.g. 'email', 'ssn', etc.)
+    # meta_match.value:   the regex pattern or extra pattern string
+    # meta_match.replacement: the default replacement value
+    # meta_match.breadcrumbs: set of path keys (for path-aware logic)
+    if meta_match.pattern == 'email':
         return "***REDACTED_EMAIL***"
-    if pattern_key == 'ssn':
+    if meta_match.pattern == 'ssn':
         return "XXX-XX-XXXX"
+    if meta_match.pattern == 'city':
+        # Use Faker to generate a fake city name
+        return faker.city()
     if 'secret' in value:
         return "***CLASSIFIED***"
-    return replacement
+    return meta_match.replacement
 
 db = DoubleTake(callback=custom_replacer)
 ```
@@ -127,7 +139,10 @@ db = DoubleTake(callback=custom_replacer)
 # Only replace certain types, allow others through
 db = DoubleTake(
     allowed=['email'],  # Don't replace emails
-    extras=[r'CUST-\d+', r'REF-[A-Z]{3}-\d{4}']  # Custom patterns
+    extras={
+        'customer_id': r'CUST-\d+',
+        'reference': r'REF-[A-Z]{3}-\d{4}'
+    }  # Custom patterns as a dict
 )
 ```
 
@@ -279,7 +294,7 @@ db = DoubleTake(
     use_faker=False,           # Use fake data vs asterisks
     callback=None,             # Custom replacement function
     allowed=[],                # Pattern types to skip
-    extras=[],                 # Additional regex patterns  
+    extras={},                 # Additional regex patterns as a dict
     safe_values=[],            # Values to protect from replacement
     idempotent=False,          # Prevent double-masking operations
     known_paths=[],            # Specific paths to target
@@ -359,7 +374,7 @@ logs = [
 
 db = DoubleTake(
     safe_values=['support@company.com'],  # Keep official support email visible
-    extras=[r'\+1-555-SUPPORT']          # Keep support phone pattern
+    extras={'phone': r'\+1-555-SUPPORT'}  # Keep support phone pattern
 )
 
 sanitized_logs = db.mask_data(logs)

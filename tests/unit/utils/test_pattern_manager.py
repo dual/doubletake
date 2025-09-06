@@ -6,6 +6,7 @@ import unittest
 import re
 
 from doubletake.utils.pattern_manager import PatternManager
+from doubletake.utils.meta_match import MetaMatch
 
 
 class TestPatternManager(unittest.TestCase):
@@ -13,20 +14,21 @@ class TestPatternManager(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures before each test method."""
-        self.default_manager = PatternManager()
+        self.default_manager = PatternManager(meta_match=MetaMatch())
         self.custom_manager = PatternManager(
             replace_with='X',
             maintain_length=True,
-            extras=[r'\b[A-Z]{2,3}-\d{4,6}\b']  # Custom pattern for codes like AB-1234
+            extras={"custom_code": r'\b[A-Z]{2,3}-\d{4,6}\b'},  # Custom pattern for codes like AB-1234
+            meta_match=MetaMatch()
         )
 
     def test_init_with_default_settings(self) -> None:
         """Test PatternManager initialization with default settings."""
-        manager = PatternManager()
+        manager = PatternManager(meta_match=MetaMatch())
 
         self.assertEqual(manager.replace_with, '*')
         self.assertFalse(manager.maintain_length)
-        self.assertEqual(manager.extras, [])
+        self.assertEqual(manager.extras, {})
         self.assertIsInstance(manager.patterns, dict)
 
         # Check that default patterns are present
@@ -36,11 +38,15 @@ class TestPatternManager(unittest.TestCase):
 
     def test_init_with_custom_settings(self) -> None:
         """Test PatternManager initialization with custom settings."""
-        extras = [r'\b[A-Z]{2,3}-\d{4,6}\b', r'\b\d{4}-\d{2}-\d{2}\b']
+        extras = {
+            "custom_code": r'\b[A-Z]{2,3}-\d{4,6}\b',
+            "custom_date": r'\b\d{4}-\d{2}-\d{2}\b'
+        }
         manager = PatternManager(
             replace_with='#',
             maintain_length=True,
-            extras=extras
+            extras=extras,
+            meta_match=MetaMatch()
         )
 
         self.assertEqual(manager.replace_with, '#')
@@ -49,15 +55,15 @@ class TestPatternManager(unittest.TestCase):
 
     def test_init_with_non_string_replace_with(self) -> None:
         """Test PatternManager handles non-string replace_with values."""
-        manager = PatternManager(replace_with=123)  # type: ignore
+        manager = PatternManager(replace_with=123, meta_match=MetaMatch())  # type: ignore
         self.assertEqual(manager.replace_with, '123')
 
-        manager = PatternManager(replace_with=None)   # type: ignore
+        manager = PatternManager(replace_with=None, meta_match=MetaMatch())   # type: ignore
         self.assertEqual(manager.replace_with, 'None')
 
     def test_patterns_dictionary_structure(self) -> None:
         """Test that the patterns dictionary has the expected structure."""
-        manager = PatternManager()
+        manager = PatternManager(meta_match=MetaMatch())
 
         # Check that all patterns are strings and compile as valid regex
         for pattern_name, pattern_value in manager.patterns.items():
@@ -72,7 +78,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_email_pattern_matching(self) -> None:
         """Test email pattern detection and replacement."""
-        manager = PatternManager(replace_with='[EMAIL]')
+        manager = PatternManager(replace_with='[EMAIL]', meta_match=MetaMatch())
 
         test_cases = [
             'Contact us at support@example.com for help',
@@ -88,7 +94,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_phone_pattern_matching(self) -> None:
         """Test phone number pattern detection and replacement."""
-        manager = PatternManager(replace_with='[PHONE]')
+        manager = PatternManager(replace_with='[PHONE]', meta_match=MetaMatch())
 
         test_cases = [
             'Call me at 555-123-4567',
@@ -104,7 +110,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_ssn_pattern_matching(self) -> None:
         """Test SSN pattern detection and replacement."""
-        manager = PatternManager(replace_with='[SSN]')
+        manager = PatternManager(replace_with='[SSN]', meta_match=MetaMatch())
 
         test_cases = [
             'SSN: 123-45-6789',
@@ -119,7 +125,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_credit_card_pattern_matching(self) -> None:
         """Test credit card pattern detection and replacement."""
-        manager = PatternManager(replace_with='[CARD]')
+        manager = PatternManager(replace_with='[CARD]', meta_match=MetaMatch())
 
         test_cases = [
             'Card: 4532-1234-5678-9012',
@@ -134,7 +140,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_ip_address_pattern_matching(self) -> None:
         """Test IP address pattern detection and replacement."""
-        manager = PatternManager(replace_with='[IP]')
+        manager = PatternManager(replace_with='[IP]', meta_match=MetaMatch())
 
         test_cases = [
             'Server IP: 192.168.1.100',
@@ -149,7 +155,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_url_pattern_matching(self) -> None:
         """Test URL pattern detection and replacement."""
-        manager = PatternManager(replace_with='[URL]')
+        manager = PatternManager(replace_with='[URL]', meta_match=MetaMatch())
 
         test_cases = [
             'Visit https://www.example.com',
@@ -164,7 +170,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_replace_pattern_with_maintain_length_false(self) -> None:
         """Test pattern replacement without maintaining length."""
-        manager = PatternManager(replace_with='***', maintain_length=False)
+        manager = PatternManager(replace_with='***', maintain_length=False, meta_match=MetaMatch())
 
         test_string = 'Email me at test@example.com please'
         result = manager.search_and_replace(test_string)
@@ -174,7 +180,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_replace_pattern_with_maintain_length_true(self) -> None:
         """Test pattern replacement while maintaining original length."""
-        manager = PatternManager(replace_with='X', maintain_length=True)
+        manager = PatternManager(replace_with='X', maintain_length=True, meta_match=MetaMatch())
 
         test_string = 'Email: test@example.com'
         original_email = 'test@example.com'
@@ -187,7 +193,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_replace_pattern_case_insensitive(self) -> None:
         """Test that pattern replacement is case-insensitive."""
-        manager = PatternManager(replace_with='[MASKED]')
+        manager = PatternManager(replace_with='[MASKED]', meta_match=MetaMatch())
 
         test_cases = [
             'EMAIL: TEST@EXAMPLE.COM',
@@ -202,7 +208,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_replace_pattern_multiple_matches(self) -> None:
         """Test replacing multiple pattern matches in a single string."""
-        manager = PatternManager(replace_with='[MASKED]')
+        manager = PatternManager(replace_with='[MASKED]', meta_match=MetaMatch())
 
         test_string = 'Contact admin@site.com or support@site.com for help'
         result = manager.search_and_replace(test_string)
@@ -213,7 +219,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_replace_pattern_no_match(self) -> None:
         """Test pattern replacement when no matches are found."""
-        manager = PatternManager(replace_with='[MASKED]')
+        manager = PatternManager(replace_with='[MASKED]', meta_match=MetaMatch())
 
         test_string = 'This string has no email addresses'
         result = manager.search_and_replace(test_string)
@@ -224,7 +230,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_get_replace_with_with_maintain_length_false(self) -> None:
         """Test private method get_replace_with with maintain_length=False."""
-        manager = PatternManager(replace_with='XXX', maintain_length=False)
+        manager = PatternManager(replace_with='XXX', maintain_length=False, meta_match=MetaMatch())
 
         # Use a simple pattern and test string
         pattern = r'\d+'
@@ -236,7 +242,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_get_replace_with_with_maintain_length_true(self) -> None:
         """Test private method get_replace_with with maintain_length=True."""
-        manager = PatternManager(replace_with='X', maintain_length=True)
+        manager = PatternManager(replace_with='X', maintain_length=True, meta_match=MetaMatch())
 
         pattern = r'\d+'
         test_string = '12345'
@@ -246,30 +252,30 @@ class TestPatternManager(unittest.TestCase):
 
     def test_extras_patterns_empty(self) -> None:
         """Test that extras patterns list can be empty."""
-        manager = PatternManager(extras=[])
-        self.assertEqual(manager.extras, [])
+        manager = PatternManager(extras={}, meta_match=MetaMatch())
+        self.assertEqual(manager.extras, {})
 
     def test_extras_patterns_custom(self) -> None:
         """Test custom extras patterns functionality."""
-        custom_patterns = [
-            r'\b[A-Z]{2,3}-\d{4,6}\b',  # Code pattern like AB-1234
-            r'\b\d{4}-\d{2}-\d{2}\b'     # Date pattern like 2024-01-15
-        ]
-        manager = PatternManager(extras=custom_patterns)
+        custom_patterns = {
+            "custom_code": r'\b[A-Z]{2,3}-\d{4,6}\b',  # Code pattern like AB-1234
+            "custom_date": r'\b\d{4}-\d{2}-\d{2}\b'     # Date pattern like 2024-01-15
+        }
+        manager = PatternManager(extras=custom_patterns, meta_match=MetaMatch())
 
         self.assertEqual(manager.extras, custom_patterns)
 
         # Test that extras patterns work with replace_pattern
         test_string = 'Code: ABC-12345 and date: 2024-01-15'
 
-        for pattern in manager.extras:
+        for label, pattern in manager.extras.items():
             result = manager.search_and_replace(test_string)
             # At least one of the patterns should match and replace
             self.assertTrue(len(result) <= len(test_string) or '*' in result)
 
     def test_pattern_replacement_preserves_surrounding_text(self) -> None:
         """Test that pattern replacement preserves surrounding text."""
-        manager = PatternManager(replace_with='[HIDDEN]')
+        manager = PatternManager(replace_with='[HIDDEN]', meta_match=MetaMatch())
 
         test_string = 'Please contact us at support@company.com for assistance.'
         result = manager.search_and_replace(test_string)
@@ -280,7 +286,7 @@ class TestPatternManager(unittest.TestCase):
 
     def test_complex_text_with_multiple_pattern_types(self) -> None:
         """Test replacing patterns in text containing multiple PII types."""
-        manager = PatternManager(replace_with='***')
+        manager = PatternManager(replace_with='***', meta_match=MetaMatch())
 
         test_string = 'Call 555-123-4567 or email admin@site.com. IP: 192.168.1.1'
 
@@ -293,14 +299,14 @@ class TestPatternManager(unittest.TestCase):
 
     def test_edge_case_empty_string(self) -> None:
         """Test pattern replacement with empty string."""
-        manager = PatternManager()
+        manager = PatternManager(meta_match=MetaMatch())
 
         result = manager.search_and_replace('')
         self.assertEqual(result, '')
 
     def test_edge_case_special_characters_in_replace_with(self) -> None:
         """Test pattern replacement with special characters in replace_with."""
-        manager = PatternManager(replace_with='[REDACTED-$#@!]')
+        manager = PatternManager(replace_with='[REDACTED-$#@!]', meta_match=MetaMatch())
 
         test_string = 'Contact: test@example.com'
         result = manager.search_and_replace(test_string)
@@ -317,7 +323,7 @@ class TestPatternManager(unittest.TestCase):
         ]
 
         for replace_char, test_value in test_cases:
-            manager = PatternManager(replace_with=replace_char, maintain_length=True)
+            manager = PatternManager(replace_with=replace_char, maintain_length=True, meta_match=MetaMatch())
 
             # Find appropriate pattern for test value
             pattern = None
@@ -339,7 +345,8 @@ class TestPatternManager(unittest.TestCase):
         safe_emails = ['admin@company.com', 'allowed.user@domain.com']
         manager = PatternManager(
             replace_with='[MASKED]',
-            safe_values=safe_emails
+            safe_values=safe_emails,
+            meta_match=MetaMatch()
         )
 
         # Test string with both safe and unsafe emails
@@ -357,7 +364,8 @@ class TestPatternManager(unittest.TestCase):
         safe_values = ['555-000-0000', 'admin@safe.com', '192.168.1.1']
         manager = PatternManager(
             replace_with='X',
-            safe_values=safe_values
+            safe_values=safe_values,
+            meta_match=MetaMatch()
         )
 
         test_string = 'Call 555-000-0000 or 555-123-4567, email admin@safe.com or test@example.com, IP 192.168.1.1 or 10.0.0.1'
@@ -377,7 +385,8 @@ class TestPatternManager(unittest.TestCase):
         """Test that empty safe_values list works normally."""
         manager = PatternManager(
             replace_with='[MASKED]',
-            safe_values=[]
+            safe_values=[],
+            meta_match=MetaMatch()
         )
 
         test_string = 'Email me at test@example.com'
@@ -393,7 +402,8 @@ class TestPatternManager(unittest.TestCase):
         manager = PatternManager(
             replace_with='X',
             maintain_length=True,
-            safe_values=safe_emails
+            safe_values=safe_emails,
+            meta_match=MetaMatch()
         )
 
         test_string = 'keep@domain.com and replace@example.com'
@@ -410,7 +420,8 @@ class TestPatternManager(unittest.TestCase):
         """Test that idempotent feature provides consistent replacements."""
         manager = PatternManager(
             use_faker=True,
-            idempotent=True
+            idempotent=True,
+            meta_match=MetaMatch()
         )
 
         test_string = 'Contact john@example.com and also reach john@example.com'
@@ -443,7 +454,8 @@ class TestPatternManager(unittest.TestCase):
         """Test idempotent feature with different PII values."""
         manager = PatternManager(
             use_faker=True,
-            idempotent=True
+            idempotent=True,
+            meta_match=MetaMatch()
         )
 
         # First, establish mappings
@@ -470,7 +482,8 @@ class TestPatternManager(unittest.TestCase):
         """Test idempotent feature with static replacement strings."""
         manager = PatternManager(
             replace_with='[MASK]',
-            idempotent=True
+            idempotent=True,
+            meta_match=MetaMatch()
         )
 
         test_string = 'Emails: test@example.com and also test@example.com again'
@@ -484,7 +497,8 @@ class TestPatternManager(unittest.TestCase):
         """Test that idempotent=False allows different replacements (with faker)."""
         manager = PatternManager(
             use_faker=True,
-            idempotent=False
+            idempotent=False,
+            meta_match=MetaMatch()
         )
 
         # With faker and idempotent=False, we can't guarantee different values
@@ -499,8 +513,9 @@ class TestPatternManager(unittest.TestCase):
         """Test idempotent feature with custom extra patterns."""
         manager = PatternManager(
             replace_with='[CUSTOM]',
-            extras=[r'\b[A-Z]{2,3}-\d{4,6}\b'],  # Pattern for codes like AB-1234
-            idempotent=True
+            extras={"custom_code": r'\b[A-Z]{2,3}-\d{4,6}\b'},  # Pattern for codes like AB-1234
+            idempotent=True,
+            meta_match=MetaMatch()
         )
 
         test_string = 'Code: ABC-12345 and also ABC-12345 reference'
@@ -516,7 +531,8 @@ class TestPatternManager(unittest.TestCase):
         manager = PatternManager(
             replace_with='[MASKED]',
             safe_values=safe_emails,
-            idempotent=True
+            idempotent=True,
+            meta_match=MetaMatch()
         )
 
         test_string = 'safe@company.com, test@example.com, safe@company.com, test@example.com'
@@ -537,7 +553,8 @@ class TestPatternManager(unittest.TestCase):
         """Test that idempotent feature maintains internal state correctly."""
         manager = PatternManager(
             replace_with='[REPLACED]',
-            idempotent=True
+            idempotent=True,
+            meta_match=MetaMatch()
         )
 
         # Initially, existing dictionary should be empty
@@ -556,13 +573,14 @@ class TestPatternManager(unittest.TestCase):
         """Test safe_values interaction with custom callback functions."""
         safe_values = ['keep@domain.com']
 
-        def custom_callback(pattern_key, pattern_value, replacement, item):
-            return f"[CUSTOM-{pattern_key.upper()}]"
+        def custom_callback(meta_match, faker, item):
+            return f"[CUSTOM-{str(meta_match.pattern).upper()}]"
 
         manager = PatternManager(
             callback=custom_callback,
             safe_values=safe_values,
-            use_faker=True  # Needed to trigger callback usage
+            use_faker=True,  # Needed to trigger callback usage
+            meta_match=MetaMatch()
         )
 
         test_string = 'keep@domain.com and replace@example.com'
@@ -579,16 +597,17 @@ class TestPatternManager(unittest.TestCase):
         """Test complex scenario with all features: safe_values, idempotent, extras, callbacks."""
         safe_values = ['admin@company.com', '555-000-0000']
 
-        def tracking_callback(pattern_key, pattern_value, replacement, item):
-            return f"[{str(pattern_key).upper()}-TRACKED]"
+        def tracking_callback(meta_match, faker, item):
+            return f"[{str(meta_match.pattern).upper()}-TRACKED]"
 
         manager = PatternManager(
             callback=tracking_callback,
             safe_values=safe_values,
             idempotent=True,
-            extras=[r'\b[A-Z]{2}-\d{3}\b'],  # Pattern for codes like AB-123
+            extras={"custom_short_code": r'\b[A-Z]{2}-\d{3}\b'},  # Pattern for codes like AB-123
             use_faker=True,
-            maintain_length=False
+            maintain_length=False,
+            meta_match=MetaMatch()
         )
 
         test_string = 'Contact admin@company.com, call 555-000-0000 or 555-123-4567, ref code AB-123, email test@domain.com'
@@ -610,5 +629,4 @@ class TestPatternManager(unittest.TestCase):
         self.assertNotIn('AB-123', result1)
 
         # Should contain callback-generated replacements
-        # (exact values depend on callback and pattern matching order)
         self.assertTrue(any('[' in result1 and 'TRACKED]' in result1 for part in result1.split()))

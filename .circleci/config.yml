@@ -33,7 +33,7 @@ commands:
     lint-code:
         steps:
             - run: pipenv run lint
-            - run: pipenv run pylint chilo_api --output-format=json > ./coverage/lint/pylint_report.json || exit 0
+            - run: pipenv run pylint doubletake --output-format=json > ./coverage/lint/pylint_report.json || exit 0
             - run: pipenv run pylint-json2html ./coverage/lint/pylint_report.json -o ./coverage/lint/pylint_report.html || exit 0
             - store_artifacts:
                 path: ./coverage/lint

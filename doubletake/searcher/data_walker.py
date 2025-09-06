@@ -3,6 +3,7 @@ from typing_extensions import Unpack
 
 from doubletake.utils.pattern_manager import PatternManager
 from doubletake.types.settings import Settings
+from doubletake.utils.meta_match import MetaMatch
 
 
 class DataWalker:
@@ -64,18 +65,19 @@ class DataWalker:
     """
 
     def __init__(self, **kwargs: Unpack[Settings]) -> None:
-        self.__breadcrumbs: set[str] = set()
         self.__known_paths: list[str] = kwargs.get('known_paths', [])
+        self.__meta_match: MetaMatch = MetaMatch()
+        kwargs['meta_match'] = self.__meta_match
         self.__pattern_manager: PatternManager = PatternManager(**kwargs)
 
     def walk_and_replace(self, item: dict[str, Any]) -> dict[str, Any]:
-        self.__breadcrumbs = set()
+        self.__meta_match.breadcrumbs = set()
         self.__walk_dict(item, None)
         return item
 
     def __walk_dict(self, item: dict[str, Any], current_key: Optional[str]) -> None:
         if current_key is not None:
-            self.__breadcrumbs.add(current_key)
+            self.__meta_match.breadcrumbs.add(current_key)
         for key in item.keys():
             self.__determine_next_step(item, key)
 
@@ -96,6 +98,6 @@ class DataWalker:
         for known_pattern in self.__known_paths:
             known_list = known_pattern.split('.')
             key = known_list.pop()
-            if known_list == list(self.__breadcrumbs):
+            if known_list == list(self.__meta_match.breadcrumbs):
                 if isinstance(item, dict) and key in item:
                     item[key] = self.__pattern_manager.replace_value(item[key], item[key], key, None)

@@ -6,6 +6,7 @@ import copy
 import unittest
 
 from doubletake.searcher.data_walker import DataWalker
+from doubletake.utils.meta_match import MetaMatch
 from tests.mocks.test_data import (
     SAMPLE_USERS,
     COMPLEX_DATA_STRUCTURES,
@@ -21,23 +22,24 @@ class TestDataWalker(unittest.TestCase):
 
     def setUp(self) -> None:
         """Set up test fixtures before each test method."""
-        self.data_walker = DataWalker()
+        self.data_walker = DataWalker(meta_match=MetaMatch())
 
     def test_init_with_default_settings(self) -> None:
         """Test DataWalker initialization with default settings."""
-        walker = DataWalker()
+        walker = DataWalker(meta_match=MetaMatch())
         self.assertIsInstance(walker, DataWalker)
 
     def test_init_with_custom_settings(self) -> None:
         """Test DataWalker initialization with custom settings."""
-        def callback(pattern_key, pattern_value, replacement, item):
+        def callback(meta_match, faker, item):
             return "REDACTED"
 
         walker = DataWalker(  # type: ignore
             allowed=['email'],
             known_paths=['user.profile.email'],
             callback=callback,
-            extras=[r'\d{3}-\d{2}-\d{4}']
+            extras={"ssn": r'\d{3}-\d{2}-\d{4}'},
+            meta_match=MetaMatch()
         )
         self.assertIsInstance(walker, DataWalker)
 
@@ -121,7 +123,7 @@ class TestDataWalker(unittest.TestCase):
         original_phone = test_data['phone']
 
         # Create walker with email in allowed list
-        walker = DataWalker(allowed=['email'])  # type: ignore
+        walker = DataWalker(allowed=['email'], meta_match=MetaMatch())  # type: ignore
         result = walker.walk_and_replace(test_data)
 
         # Email should remain unchanged (in allowed list)
@@ -134,10 +136,10 @@ class TestDataWalker(unittest.TestCase):
         """Test PII replacement using custom callback function."""
         test_data = copy.deepcopy(SAMPLE_USERS[0])
 
-        def custom_callback(pattern_key, pattern_value, replacement, item):
-            return f"CUSTOM_REDACTED_{pattern_key}"
+        def custom_callback(meta_match, faker, item):
+            return f"CUSTOM_REDACTED_{meta_match.pattern}"
 
-        walker = DataWalker(callback=custom_callback)  # type: ignore
+        walker = DataWalker(callback=custom_callback, meta_match=MetaMatch())  # type: ignore
         result = walker.walk_and_replace(test_data)
 
         # Values should be replaced with custom callback output
@@ -158,7 +160,7 @@ class TestDataWalker(unittest.TestCase):
         }
 
         # Configure known path for user.profile.contact
-        walker = DataWalker(known_paths=['user.profile.contact'])  # type: ignore
+        walker = DataWalker(known_paths=['user.profile.contact'], meta_match=MetaMatch())  # type: ignore
         result = walker.walk_and_replace(copy.deepcopy(test_data))
 
         # The contact should be replaced due to known path
@@ -177,10 +179,8 @@ class TestDataWalker(unittest.TestCase):
         }
 
         # Add extra pattern to match USER followed by digits
-        walker = DataWalker(extras=[r'USER\d+'])  # type: ignore
+        walker = DataWalker(extras={"user_id": r'USER\d+'}, meta_match=MetaMatch())  # type: ignore
         result = walker.walk_and_replace(test_data)
-
-        # user_id should be replaced due to extra pattern
         self.assertNotEqual(result['user_id'], "USER123456")  # type: ignore
         # normal_field should remain unchanged
         self.assertEqual(result['normal_field'], "unchanged")  # type: ignore
@@ -372,8 +372,8 @@ class TestDataWalker(unittest.TestCase):
         test_data = {"email": "test@example.com", "nested": {"phone": "555-1234"}}
         callback_calls = []
 
-        def tracking_callback(pattern_key, pattern_value, replacement, item):
-            callback_calls.append((pattern_key, pattern_value, replacement, item))
+        def tracking_callback(meta_match, faker, item):
+            callback_calls.append((meta_match, faker, item))
             return "CALLBACK_REPLACED"
 
         walker = DataWalker(callback=tracking_callback)  # type: ignore
@@ -383,10 +383,11 @@ class TestDataWalker(unittest.TestCase):
         self.assertGreater(len(callback_calls), 0)
 
         # Check parameter types
-        for pattern_key, pattern_value, replacement, item in callback_calls:
-            self.assertTrue(isinstance(pattern_value, (str, type(None))))
-            self.assertTrue(isinstance(pattern_key, (str, type(None))))
-            self.assertTrue(isinstance(replacement, str))
+        for meta_match, faker, item in callback_calls:
+            from doubletake.utils.meta_match import MetaMatch as MM
+            self.assertIsInstance(meta_match, MM)
+            self.assertTrue(hasattr(faker, 'email'))  # crude check for Faker
+            self.assertIsInstance(item, str)
 
     def test_walk_and_replace_nested_lists(self) -> None:
         """Test PII replacement in nested list structures."""
@@ -440,8 +441,8 @@ class TestDataWalker(unittest.TestCase):
             "contact_list": ["john@example.com", "555-123-4567", "normal text"]
         }
 
-        def list_callback(pattern_key, pattern_value, replacement, item):
-            return f"LIST_CALLBACK_{pattern_key}_{replacement}"
+        def list_callback(meta_match, faker, item):
+            return f"LIST_CALLBACK_{meta_match.pattern}_{meta_match.replacement}"
 
         walker = DataWalker(callback=list_callback)  # type: ignore
         result = walker.walk_and_replace(test_data)

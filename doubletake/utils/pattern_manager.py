@@ -5,6 +5,7 @@ from typing_extensions import Unpack
 
 from doubletake.utils.data_faker import DataFaker
 from doubletake.types.settings import Settings
+from doubletake.utils.meta_match import MetaMatch
 
 
 class PatternManager:
@@ -73,10 +74,11 @@ class PatternManager:
         self.use_faker = kwargs.get('use_faker', False)
         self.callback = kwargs.get('callback', None)
         self.allowed: list[str] = kwargs.get('allowed', [])
-        self.extras: list[str] = kwargs.get('extras', [])
+        self.extras: dict[str, str] = kwargs.get('extras', {}) or {}
         self.replace_with: str = str(kwargs.get('replace_with', '*'))
         self.maintain_length: bool = kwargs.get('maintain_length', False)
         self.safe_values: list[str] = kwargs.get('safe_values', [])  # type: ignore
+        self.meta_match: MetaMatch = kwargs.get('meta_match', MetaMatch())
         self.patterns: dict[str, str] = {
             'email': r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',
             'phone': r'(\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}',
@@ -85,7 +87,7 @@ class PatternManager:
             'ip_address': r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b',
             'url': r'https?://(?:[-\w.])+(?:[:\d]+)?(?:/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:\w*))?)?'
         }
-        self.all: list[tuple[Any, str]] = list(self.patterns.items()) + list(enumerate(self.extras))
+        self.all: list[tuple[str, str]] = list(self.patterns.items()) + list(self.extras.items())
         self.existing: dict[str, str] = {}
 
     def get_replace_with(self, pattern_key: Any, matched: str) -> str:
@@ -117,7 +119,13 @@ class PatternManager:
     def replace_value(self, item: str, match: str, pattern_key: Any, pattern_value: Any) -> str:
         replacement = self.get_replace_with(pattern_key, match)
         if self.callback is not None and callable(self.callback):
-            replacement = self.callback(pattern_key, pattern_value, replacement, item)
+            self.__set_meta_match(pattern_key, pattern_value, replacement)
+            replacement = self.callback(self.meta_match, self.data_faker.faker, match)
         if self.idempotent:
             self.existing[match] = replacement
         return item.replace(match, replacement) if isinstance(item, str) else item
+
+    def __set_meta_match(self, pattern_key: Any, pattern_value: Any, replacement: str) -> None:
+        self.meta_match.pattern = pattern_key
+        self.meta_match.value = pattern_value
+        self.meta_match.replacement = replacement

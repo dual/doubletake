@@ -120,14 +120,9 @@ class TestConfigValidator(unittest.TestCase):
     def test_validate_valid_extras(self) -> None:
         """Test validation with valid extras (regex patterns)."""
         valid_configs = [
-            {'extras': []},  # Empty list
-            {'extras': [r'\d+']},  # Simple regex
-            {'extras': [r'[a-zA-Z]+']},  # Character class
-            {'extras': [r'\w+@\w+\.\w+']},  # Email-like pattern
-            {'extras': [r'\d{3}-\d{2}-\d{4}']},  # SSN-like pattern
-            {'extras': [r'\d+', r'[a-zA-Z]+']},  # Multiple patterns
-            {'extras': [r'.*']},  # Match all
-            {'extras': [r'^test$']},  # Anchored pattern
+            {'extras': {'test': '^test$'}},
+            {'extras': {'digits': r'\d+'}},
+            {'extras': {}},
         ]
 
         for config in valid_configs:
@@ -183,7 +178,7 @@ class TestConfigValidator(unittest.TestCase):
         complex_config = {
             'allowed': ['email', 'phone'],
             'callback': callback_func,
-            'extras': [r'\d{3}-\d{3}-\d{4}', r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'],
+            'extras': {'phone_pattern': r'\d{3}-\d{3}-\d{4}', 'email_pattern': r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'},
             'known_paths': ['/path/to/file.json'],
             'maintain_length': True,
             'replace_with': '***',
@@ -203,7 +198,7 @@ class TestConfigValidator(unittest.TestCase):
         all_settings = {
             'allowed': ['email', 'phone'],
             'callback': dummy_callback,
-            'extras': [r'\d+'],
+            'extras': {'digits': r'\d+'},
             'known_paths': ['/some/path'],
             'maintain_length': True,
             'replace_with': 'REDACTED',
@@ -228,12 +223,12 @@ class TestConfigValidator(unittest.TestCase):
             {
                 'allowed': ['email'],
                 'callback': lambda x: x,
-                'extras': [r'test']
+                'extras': {'test': r'test'}
             },
             # Only one aspect
             {'allowed': ['ssn']},
             {'callback': print},
-            {'extras': [r'.*']},
+            {'extras': {'wildcard': r'.*'}},
         ]
 
         for config in edge_cases:
@@ -292,7 +287,7 @@ class TestConfigValidator(unittest.TestCase):
         for pattern in valid_patterns:
             with self.subTest(pattern=pattern):
                 try:
-                    ConfigValidator.validate(extras=[pattern])  # type: ignore
+                    ConfigValidator.validate(extras={"custom": pattern})
                     # Verify the pattern is actually compilable
                     re.compile(pattern)
                 except Exception as e:
@@ -395,12 +390,12 @@ class TestConfigValidator(unittest.TestCase):
                     ConfigValidator.validate(**config)  # type: ignore
 
     def test_validate_extras_list_type_check(self) -> None:
-        """Test validation of extras parameter type checking (must be list)."""
-        # Valid list values (empty and with contents tested elsewhere)
+        """Test validation of extras parameter type checking (must be dict)."""
+        # Valid dict values
         valid_configs = [
-            {'extras': []},
-            {'extras': [r'\d+']},
-            {'extras': [r'\d+', r'[a-z]+']},
+            {'extras': {}},
+            {'extras': {'digits': r'\d+'}},
+            {'extras': {'letters': r'[a-z]+'}},
         ]
 
         for config in valid_configs:
@@ -408,16 +403,16 @@ class TestConfigValidator(unittest.TestCase):
                 try:
                     ConfigValidator.validate(**config)  # type: ignore
                 except Exception as e:
-                    self.fail(f"Valid extras list validation failed: {config}, error: {e}")
+                    self.fail(f"Valid extras dict validation failed: {config}, error: {e}")
 
-        # Invalid non-list values
+        # Invalid non-dict values
         invalid_configs = [
-            {'extras': 'not_a_list'},
-            {'extras': r'\d+'},  # Single string instead of list
+            {'extras': 'not_a_dict'},
+            {'extras': r'\d+'},  # Single string instead of dict
             {'extras': 123},
             {'extras': True},
-            {'extras': {}},  # Dictionary instead of list
-            {'extras': set()},  # Set instead of list
+            {'extras': []},  # List instead of dict
+            {'extras': set()},  # Set instead of dict
         ]
 
         for config in invalid_configs:
@@ -587,19 +582,16 @@ class TestConfigValidator(unittest.TestCase):
 
     def test_validate_complex_config_with_new_parameters(self) -> None:
         """Test validation with complex configuration including new parameters."""
-        def dummy_callback(item, key, pattern, breadcrumbs):
-            return "redacted"
-
         complex_config = {
-            'allowed': ['email'],
-            'callback': dummy_callback,
-            'extras': [r'\b[A-Z]{2,3}-\d{4,6}\b'],
-            'safe_values': ['admin@company.com', '555-000-0000'],
-            'idempotent': True,
-            'known_paths': ['user.email', 'billing.credit_card'],
+            'allowed': ['email', 'phone'],
+            'callback': lambda x: x,
+            'extras': {'custom': r'\d{3}-\d{2}-\d{4}'},
+            'known_paths': ['user.profile.email'],
+            'maintain_length': True,
+            'replace_with': 'MASKED',
             'use_faker': True,
-            'maintain_length': False,
-            'replace_with': 'X'
+            'idempotent': True,
+            'safe_values': ['admin@company.com']
         }
 
         try:

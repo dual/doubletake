@@ -145,3 +145,6 @@ api_grpc_secured.py
 *.crt
 *.key
 *.pem
+
+# ignore vscode settings
+.vscode/

@@ -148,6 +148,25 @@ class TestConfigValidator(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     ConfigValidator.validate(**config)  # type: ignore
 
+    def test_validate_invalid_extras_non_string_keys_values(self) -> None:
+        """Test validation with invalid extras (non-string keys or values in dict)."""
+        invalid_configs = [
+            {'extras': {123: 'pattern'}},  # Non-string key
+            {'extras': {'label': 123}},    # Non-string value
+            {'extras': {None: 'pattern'}},  # None key
+            {'extras': {'label': None}},   # None value
+            {'extras': {True: 'pattern'}},  # Boolean key
+            {'extras': {'label': True}},   # Boolean value
+            {'extras': {'label': 'pattern', 123: 'another'}},  # Mixed valid and invalid keys
+            {'extras': {'label': 'pattern', 'another': 123}},  # Mixed valid and invalid values
+        ]
+
+        for config in invalid_configs:
+            with self.subTest(config=config):
+                with self.assertRaises(ValueError) as context:
+                    ConfigValidator.validate(**config)  # type: ignore
+                self.assertIn('Each key and value in "extras" must be a string', str(context.exception))
+
     def test_validate_invalid_extras_bad_regex(self) -> None:
         """Test validation with invalid regex patterns."""
         invalid_configs = [
@@ -161,6 +180,21 @@ class TestConfigValidator(unittest.TestCase):
             with self.subTest(config=config):
                 with self.assertRaises(ValueError):
                     ConfigValidator.validate(**config)  # type: ignore
+
+    def test_validate_invalid_extras_bad_regex_dict(self) -> None:
+        """Test validation with invalid regex patterns in dict format."""
+        invalid_configs = [
+            {'extras': {'bad_bracket': '['}},  # Unclosed bracket
+            {'extras': {'bad_quantifier': '*'}},  # Invalid quantifier
+            {'extras': {'duplicate_groups': r'(?P<name>)(?P<name>)'}},  # Duplicate group names
+            {'extras': {'mixed': r'\d+', 'bad': '['}},  # Mixed valid and invalid patterns
+        ]
+
+        for config in invalid_configs:
+            with self.subTest(config=config):
+                with self.assertRaises(ValueError) as context:
+                    ConfigValidator.validate(**config)  # type: ignore
+                self.assertIn('Invalid regex pattern in "extras"', str(context.exception))
 
     def test_validate_missing_extras(self) -> None:
         """Test validation when extras key is missing."""

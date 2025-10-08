@@ -2,14 +2,14 @@
 
 > **Intelligent PII Detection and Replacement for Python**
 
-[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/doubletake/)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![CircleCI](https://circleci.com/gh/dual/doubletake.svg?style=shield)](https://circleci.com/gh/dual/doubletake)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=bugs)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
-[![pypi package](https://img.shields.io/pypi/v/doubletake?color=%2334D058&label=pypi%20package)](https://pypi.org/project/doubletake/)
-[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dual/doubletake/issues)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=dual_doubletake&metric=coverage)](https://sonarcloud.io/summary/new_code?id=dual_doubletake)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://pypi.org/project/doubletake/)
+[![pypi package](https://img.shields.io/pypi/v/doubletake?color=blue&label=pypi%20package)](https://pypi.org/project/doubletake/)
+[![License](https://img.shields.io/badge/license-apache2.0-blue)](LICENSE)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-blue.svg?style=flat)](https://github.com/dual/doubletake/issues)
 
 doubletake is a powerful, flexible library for automatically detecting and replacing Personally Identifiable Information (PII) in your data structures. Whether you're anonymizing datasets for testing, protecting sensitive information in logs, or ensuring GDPR compliance, doubletake makes it effortless.
 
@@ -165,8 +165,8 @@ db = DoubleTake(
 # Protect specific values from being replaced
 db = DoubleTake(
     safe_values=[
-        'admin@company.com',        # Corporate email to keep
-        'support@company.com',      # Support contact
+        'admin@company.com',       # Corporate email to keep
+        'support@company.com',     # Support contact
         '555-000-0000',            # Test phone number
         'N/A'                      # Placeholder values
     ]
@@ -174,7 +174,7 @@ db = DoubleTake(
 
 # These values will never be replaced, even if they match PII patterns
 data = {
-    "primary_email": "admin@company.com",     # ← Stays unchanged
+    "primary_email": "admin@company.com",    # ← Stays unchanged
     "user_email": "user@personal.com",       # ← Gets replaced
     "phone": "555-000-0000",                 # ← Stays unchanged
     "mobile": "555-123-4567"                 # ← Gets replaced
@@ -224,7 +224,7 @@ notification_data = {
 masked_profile = db.mask_data([profile_data])[0]
 masked_notifications = db.mask_data([notification_data])[0] 
 
-print(masked_profile["email"])        # sarah.johnson@example.net
+print(masked_profile["email"])            # sarah.johnson@example.net
 print(masked_notifications["recipient"])  # sarah.johnson@example.net ← Same fake email!
 
 # Data relationships preserved - you can still join/correlate the datasets
@@ -272,7 +272,7 @@ db = DoubleTake(use_faker=True)  # Uses StringReplacer for simple string input
 
 ```python
 # Automatically chosen when using advanced features
-db = DoubleTake(use_faker=True)  # Uses DataWalker
+db = DoubleTake(use_faker=True)    # Uses DataWalker
 db = DoubleTake(callback=my_func)  # Uses DataWalker
 ```
 
@@ -430,8 +430,8 @@ data_batches = [
 ]
 
 db = DoubleTake(
-    use_faker=True,           # Consistent fake data
-    idempotent=True,          # Safe for re-processing
+    use_faker=True,                 # Consistent fake data
+    idempotent=True,                # Safe for re-processing
     safe_values=['alice@corp.com']  # Keep specific user visible
 )
 

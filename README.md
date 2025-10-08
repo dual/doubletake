@@ -165,8 +165,8 @@ db = DoubleTake(
 # Protect specific values from being replaced
 db = DoubleTake(
     safe_values=[
-        'admin@company.com',        # Corporate email to keep
-        'support@company.com',      # Support contact
+        'admin@company.com',       # Corporate email to keep
+        'support@company.com',     # Support contact
         '555-000-0000',            # Test phone number
         'N/A'                      # Placeholder values
     ]
@@ -174,7 +174,7 @@ db = DoubleTake(
 
 # These values will never be replaced, even if they match PII patterns
 data = {
-    "primary_email": "admin@company.com",     # ← Stays unchanged
+    "primary_email": "admin@company.com",    # ← Stays unchanged
     "user_email": "user@personal.com",       # ← Gets replaced
     "phone": "555-000-0000",                 # ← Stays unchanged
     "mobile": "555-123-4567"                 # ← Gets replaced

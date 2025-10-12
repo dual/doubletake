@@ -67,7 +67,8 @@ jobs:
         docker:
             - image: cimg/python:3.9.17
         steps:
-            - checkout
+            - checkout:
+                  method: full
             - python/install-packages:
                 pkg-manager: pipenv
                 args: '--dev'
@@ -79,7 +80,8 @@ jobs:
         docker:
             - image: cimg/python:3.9.17
         steps:
-            - checkout
+            - checkout:
+                  method: full
             - python/install-packages:
                 pkg-manager: pipenv
             - pypi-setup
